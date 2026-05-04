@@ -1,0 +1,22 @@
+nohup: 忽略输入
+Unable to set line 4 to input
+Traceback (most recent call last):
+  File "/home/zuucha/Desktop/SmartGreenhouse/V3.py", line 275, in <module>
+    pump_relay  = digitalio.DigitalInOut(PUMP_PIN)
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/digitalio.py", line 67, in __init__
+    self.direction = Direction.INPUT
+    ^^^^^^^^^^^^^^
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/digitalio.py", line 97, in direction
+    self._pin.init(mode=Pin.IN)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/adafruit_blinka/microcontroller/generic_linux/lgpio_pin.py", line 81, in init
+    self._set_gpio_mode_in()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/adafruit_blinka/microcontroller/generic_linux/lgpio_pin.py", line 130, in _set_gpio_mode_in
+    Pin._check_result(lgpio.gpio_claim_input(CHIP, self.id, lFlags=lflags))
+                      ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/lgpio.py", line 755, in gpio_claim_input
+    return _u2i(_lgpio._gpio_claim_input(handle&0xffff, lFlags, gpio))
+  File "/home/zuucha/iot_env/lib/python3.13/site-packages/lgpio.py", line 458, in _u2i
+    raise error(error_text(v))
+lgpio.error: 'GPIO busy'
