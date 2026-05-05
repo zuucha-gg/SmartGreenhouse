@@ -46,11 +46,11 @@ from flask import Flask, render_template_string, request, redirect, url_for, jso
 TELEGRAM_TOKEN = "8606796819:AAH_aYU-HcfQwFC-zC4CcxyMjjpAlz1Ixek"
 ADMIN_IDS      = [5933582361]
 TARGET_CHAT_ID = "5933582361"
-VERSION        = "4.2.0"
+VERSION        = "4.1.0"
 
 # GPIO pin constants — only referenced when VIRTUAL=False (board is imported above)
 if not VIRTUAL:
-    PUMP_PIN  = board.D17
+    PUMP_PIN  = board.D22
     MOTOR_PIN = board.D27
     DHT_PIN   = board.D4
 else:
@@ -96,14 +96,6 @@ cfg = {
     "last_watered":    "Never",
     "boot_time":       time.time(),
     "plant_profile":   "custom",
-    # === Virtual mode toggle (runtime) ===
-    "virtual_toggle":  False,  # True = override to virtual even if HW present
-    # Simulated sensor override values (used when virtual_toggle is ON)
-    "sim_temp":   25.0,
-    "sim_hum":    60.0,
-    "sim_soil":   55.0,
-    "sim_light":  50.0,
-    "sim_rain":   5.0,
     # === NEW: Party Mode (relay alternating) ===
     "party_mode":      False,
     "party_relay_a_on":  3,    # seconds relay A stays ON
@@ -567,10 +559,6 @@ def soil_ec_estimate(soil_pct):
     try: return round(0.05 + (soil_pct/100)*1.8, 2)
     except: return 0.0
 
-def is_virtual():
-    """True when running in virtual mode (startup flag OR runtime toggle)."""
-    return VIRTUAL or cfg.get("virtual_toggle", False)
-
 # ================== 7. UTILITIES ==================
 
 def is_night():
@@ -629,13 +617,6 @@ def core_monitor():
     log_interval = 0; sched_tick = 0
     while True:
         try:
-            # When runtime virtual toggle is ON, push sim sliders into _vsim
-            if cfg.get("virtual_toggle") and not VIRTUAL:
-                pass  # real HW but virtual toggle: read real sensors (no _vsim)
-            if VIRTUAL or cfg.get("virtual_toggle"):
-                # If user has manually set sim values via /sim_set or sliders, honour them
-                pass  # _vsim is already updated by _virtual_sim_loop or /sim_set
-
             lv = l_chan.voltage; sv = s_chan.voltage; rv = r_chan.voltage
             data["light"] = max(0, min(100, (1-(lv/3.3))*100))
             data["soil"]  = max(0, min(100, (1-(sv/2.5))*100))
@@ -763,17 +744,11 @@ HTML = r"""<!DOCTYPE html>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#04080a;--panel:#0c1c24;--border:rgba(52,211,153,0.14);
+  --bg:#04080a;--panel:#0b1820;--border:rgba(52,211,153,0.10);
   --accent:#34d399;--blue:#38bdf8;--amber:#fbbf24;--red:#f87171;
   --purple:#a78bfa;--pink:#f472b6;--teal:#2dd4bf;
-  --text:#e8faf3;--muted:#6aab93;--font:'Space Grotesk',sans-serif;
+  --text:#d1fae5;--muted:#3d6457;--font:'Space Grotesk',sans-serif;
   --mono:'JetBrains Mono',monospace;
-}
-:root.light{
-  --bg:#eef7f3;--panel:#ffffff;--border:rgba(5,150,105,0.18);
-  --accent:#059669;--blue:#0284c7;--amber:#d97706;--red:#dc2626;
-  --purple:#7c3aed;--pink:#db2777;--teal:#0d9488;
-  --text:#0a2018;--muted:#3d7a62;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -790,7 +765,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 
 /* ── NAV TABS ── */
 .nav-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:8px}
-.nav-tab{padding:8px 16px;border-radius:10px;border:none;font-family:var(--font);font-size:.82rem;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;transition:all .2s}
+.nav-tab{padding:8px 16px;border-radius:10px;border:none;font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);background:transparent;transition:all .2s}
 .nav-tab.active,.nav-tab:hover{background:rgba(52,211,153,0.12);color:var(--accent)}
 .tab-section{display:none}.tab-section.active{display:block}
 
@@ -798,8 +773,8 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px}
 .brand{display:flex;align-items:center;gap:14px}
 .brand-mark{width:50px;height:50px;border-radius:14px;background:linear-gradient(135deg,#34d399,#059669 50%,#0891b2);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 30px rgba(52,211,153,0.35)}
-.brand-title{font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:-.02em}
-.brand-sub{font-family:var(--mono);font-size:.68rem;color:var(--muted);display:flex;gap:10px;margin-top:2px;flex-wrap:wrap}
+.brand-title{font-size:1.3rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.brand-sub{font-family:var(--mono);font-size:.62rem;color:var(--muted);display:flex;gap:10px;margin-top:2px;flex-wrap:wrap}
 .brand-sub b{color:var(--accent)}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .live-badge{display:flex;align-items:center;gap:7px;background:rgba(52,211,153,0.07);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
@@ -813,18 +788,18 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 .health-banner{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px 22px;margin-bottom:14px;gap:16px;flex-wrap:wrap}
 .health-score-wrap{display:flex;align-items:center;gap:14px}
 .health-ring{width:60px;height:60px;flex-shrink:0}
-.health-info h3{font-size:1.1rem;font-weight:700;color:var(--text)}
-.health-info p{font-size:.72rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.health-info h3{font-size:1.1rem;font-weight:700;color:#fff}
+.health-info p{font-size:.68rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
 .health-pills{display:flex;gap:7px;flex-wrap:wrap}
-.h-pill{display:flex;align-items:center;gap:5px;background:rgba(52,211,153,.07);border:1px solid var(--border);border-radius:8px;padding:6px 11px;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.h-pill{display:flex;align-items:center;gap:5px;background:rgba(52,211,153,.07);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-family:var(--mono);font-size:.63rem;color:var(--muted)}
 .h-pill b{color:var(--accent)}.h-pill.warn b{color:var(--amber)}.h-pill.bad b{color:var(--red)}
 
 /* ── ENV BAR ── */
 .env-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.env-pill{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:var(--mono);font-size:.72rem;color:var(--muted);flex:1;min-width:140px}
+.env-pill{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:var(--mono);font-size:.68rem;color:var(--muted);flex:1;min-width:140px}
 .env-pill.ok{border-color:rgba(52,211,153,.4);color:var(--accent)}.env-pill.warn{border-color:rgba(251,191,36,.4);color:var(--amber)}.env-pill.bad{border-color:rgba(248,113,113,.4);color:var(--red)}
 .env-pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
-.env-pill-val{margin-left:auto;font-weight:600;color:var(--text)}
+.env-pill-val{margin-left:auto;font-weight:500;color:#fff}
 .night-bar{display:flex;align-items:center;gap:7px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:8px;padding:6px 14px;font-family:var(--mono);font-size:.63rem;color:var(--purple);margin-bottom:10px}
 
 /* ── METRIC CARDS ── */
@@ -838,11 +813,11 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 @keyframes party-glow{from{box-shadow:0 0 20px rgba(244,114,182,.15)}to{box-shadow:0 0 30px rgba(167,139,250,.3)}}
 .card:hover{transform:translateY(-3px)}
 .card-icon{font-size:1.4rem;margin-bottom:8px}
-.card-label{font-family:var(--mono);font-size:.64rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
-.card-val{font-family:var(--mono);font-size:2rem;font-weight:500;color:var(--text);line-height:1}
+.card-label{font-family:var(--mono);font-size:.57rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.card-val{font-family:var(--mono);font-size:2rem;font-weight:500;color:#fff;line-height:1}
 .card-val.g{color:var(--accent)}.card-val.r{color:var(--red)}.card-val.a{color:var(--amber)}.card-val.b{color:var(--blue)}.card-val.p{color:var(--purple)}.card-val.t{color:var(--teal)}
-.card-sub{font-family:var(--mono);font-size:.67rem;color:var(--muted);margin-top:6px;line-height:1.65}
-.card-tag{display:inline-block;margin-top:7px;padding:3px 8px;border-radius:5px;font-family:var(--mono);font-size:.63rem;font-weight:600}
+.card-sub{font-family:var(--mono);font-size:.58rem;color:var(--muted);margin-top:6px;line-height:1.55}
+.card-tag{display:inline-block;margin-top:7px;padding:3px 8px;border-radius:5px;font-family:var(--mono);font-size:.56rem;font-weight:600}
 .tag-g{background:rgba(52,211,153,.12);color:var(--accent)}.tag-a{background:rgba(251,191,36,.12);color:var(--amber)}.tag-r{background:rgba(248,113,113,.12);color:var(--red)}.tag-b{background:rgba(56,189,248,.12);color:var(--blue)}.tag-p{background:rgba(167,139,250,.12);color:var(--purple)}.tag-t{background:rgba(45,212,191,.12);color:var(--teal)}
 .trend{font-size:1rem;margin-left:3px;opacity:.7}
 .bar-t{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:9px;overflow:hidden}
@@ -851,9 +826,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 /* ── STAT ROW ── */
 .stat-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .stat-mini{flex:1;min-width:100px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
-.sm-label{font-family:var(--mono);font-size:.61rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
-.sm-val{font-family:var(--mono);font-size:1.2rem;font-weight:500;color:var(--text);margin-top:3px}
-.sm-unit{font-size:.62rem;color:var(--muted)}
+.sm-label{font-family:var(--mono);font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+.sm-val{font-family:var(--mono);font-size:1.15rem;font-weight:500;color:#fff;margin-top:3px}
+.sm-unit{font-size:.58rem;color:var(--muted)}
 
 /* ── LAYOUT ── */
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
@@ -861,7 +836,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 @media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 20px}
 .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.panel-title{font-size:.92rem;font-weight:700;color:var(--text)}
+.panel-title{font-size:.88rem;font-weight:700;color:#fff}
 .tab-row{display:flex;gap:5px}
 .tab{padding:4px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--mono);font-size:.62rem;cursor:pointer;transition:all .15s}
 .tab.on{background:rgba(52,211,153,.12);color:var(--accent);border-color:rgba(52,211,153,.3)}
@@ -869,11 +844,11 @@ body::before{content:'';position:fixed;inset:0;z-index:0;
 /* ── FORMS ── */
 .ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .field-row{display:flex;flex-direction:column;gap:4px}
-.field-label{font-family:var(--mono);font-size:.61rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-input[type=number],input[type=text],select{width:100%;padding:8px 10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:.78rem;outline:none;transition:border-color .15s}
+.field-label{font-family:var(--mono);font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+input[type=number],input[type=text],select{width:100%;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:#fff;font-family:var(--mono);font-size:.78rem;outline:none;transition:border-color .15s}
 input[type=number]:focus,input[type=text]:focus,select:focus{border-color:var(--accent)}
 input[type=range]{width:100%;accent-color:var(--accent)}
-select option{background:var(--panel);color:var(--text)}
+select option{background:#101f24}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:10px;border:none;font-family:var(--font);font-size:.78rem;font-weight:600;cursor:pointer;text-decoration:none;transition:all .18s;white-space:nowrap}
 .btn-g{background:linear-gradient(135deg,#34d399,#059669);color:#001a0e}
 .btn-b{background:linear-gradient(135deg,#38bdf8,#0284c7);color:#001a2a}
@@ -889,8 +864,8 @@ select option{background:var(--panel);color:var(--text)}
 
 /* ── TABLES ── */
 .wlog-table,.sched-table,.cmd-table{width:100%;border-collapse:collapse;font-size:.7rem}
-.wlog-table th,.sched-table th,.cmd-table th{font-family:var(--mono);font-size:.56rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:5px 7px;text-align:left;border-bottom:1px solid var(--border)}
-.wlog-table td,.sched-table td,.cmd-table td{padding:7px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;font-size:.74rem;color:var(--text)}
+.wlog-table th,.sched-table th,.cmd-table th{font-family:var(--mono);font-size:.53rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;padding:5px 7px;text-align:left;border-bottom:1px solid var(--border)}
+.wlog-table td,.sched-table td,.cmd-table td{padding:7px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
 .wlog-table tr:last-child td,.sched-table tr:last-child td,.cmd-table tr:last-child td{border-bottom:none}
 .sched-on{color:var(--accent)}.sched-off{color:var(--muted)}
 .cmd-table td:first-child{font-family:var(--mono);color:var(--accent);font-weight:600;white-space:nowrap}
@@ -927,8 +902,8 @@ select option{background:var(--panel);color:var(--text)}
 .evt-item:last-child{border-bottom:none}
 .evt-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .evt-dot.water{background:var(--blue)}.evt-dot.motor{background:var(--purple)}.evt-dot.system{background:var(--accent)}.evt-dot.alert{background:var(--red)}.evt-dot.party{background:var(--pink)}
-.evt-time{font-family:var(--mono);font-size:.63rem;color:var(--muted);white-space:nowrap}
-.evt-msg{font-family:var(--mono);font-size:.69rem;color:var(--text);flex:1}
+.evt-time{font-family:var(--mono);font-size:.6rem;color:var(--muted);white-space:nowrap}
+.evt-msg{font-family:var(--mono);font-size:.65rem;color:var(--text);flex:1}
 
 /* ── VPD GAUGE ── */
 .vpd-gauge{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 0}
@@ -937,84 +912,12 @@ select option{background:var(--panel);color:var(--text)}
 /* ── PUMP MANUAL CONTROLS ── */
 .pump-manual-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
 
-/* ── RESPONSIVE MOBILE ── */
-@media(max-width:600px){
-  .metrics{grid-template-columns:repeat(2,1fr)!important}
-  .health-banner{flex-direction:column;align-items:flex-start}
-  .health-pills{gap:5px}
-  .h-pill{font-size:.58rem;padding:4px 7px}
-  .env-bar{gap:6px}
-  .env-pill{min-width:calc(50% - 6px);font-size:.62rem;padding:6px 9px}
-  .stat-row{gap:6px}
-  .stat-mini{min-width:calc(50% - 6px)}
-  .two-col,.three-col,.four-col{grid-template-columns:1fr!important}
-  .brand-title{font-size:1.1rem}
-  .card-val{font-size:1.7rem}
-  .header{gap:8px}
-  .header-right{gap:6px}
-  .nav-tab{font-size:.7rem;padding:6px 10px}
-  .wrap{padding:12px 10px}
-}
-@media(max-width:400px){
-  .metrics{grid-template-columns:1fr!important}
-  .env-pill{min-width:100%}
-}
+/* ── FOOTER ── */
+.footer{text-align:center;margin-top:20px;font-family:var(--mono);font-size:.58rem;color:var(--muted)}
 
 /* ── ALERT STRIP ── */
 .alert-strip{display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-family:var(--mono);font-size:.72rem;color:var(--red);align-items:center;gap:8px}
 .alert-strip.show{display:flex}
-
-/* ── HEALTH RING TEXT (theme-aware) ── */
-.health-ring-track{stroke:rgba(255,255,255,0.08)}
-.health-ring-text{fill:#e8faf3}
-:root.light .health-ring-track{stroke:rgba(0,0,0,0.10)}
-:root.light .health-ring-text{fill:#0a2018}
-
-/* ── LIGHT MODE OVERRIDES ── */
-:root.light{color-scheme:light}
-:root.light body::before{
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 15%,rgba(5,150,105,.06) 0%,transparent 55%),
-    radial-gradient(ellipse 60% 50% at 90% 85%,rgba(2,132,199,.05) 0%,transparent 55%),
-    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(5,150,105,.04) 39px,rgba(5,150,105,.04) 40px),
-    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(5,150,105,.04) 39px,rgba(5,150,105,.04) 40px)}
-/* cards & panels */
-:root.light .card::before{opacity:.5}
-:root.light .bar-t{background:rgba(0,0,0,.08)}
-/* inputs */
-:root.light input[type=number],:root.light input[type=text],:root.light select{background:rgba(0,0,0,.04);color:var(--text)}
-:root.light select option{background:#fff;color:#0a2018}
-/* tables */
-:root.light .wlog-table td,:root.light .sched-table td,:root.light .cmd-table td{border-bottom:1px solid rgba(0,0,0,.06)}
-/* event list */
-:root.light .evt-item{border-bottom-color:rgba(0,0,0,.06)}
-/* night bar */
-:root.light .night-bar{background:rgba(124,58,237,.07);border-color:rgba(124,58,237,.2)}
-/* party */
-:root.light .party-control{background:linear-gradient(135deg,rgba(219,39,119,.04),rgba(124,58,237,.04))}
-:root.light .relay-lamp.a-off{background:#f0e0f0}
-:root.light .relay-lamp.b-off{background:#e0f0f8}
-:root.light .party-badge{box-shadow:0 2px 12px rgba(0,0,0,.15)}
-/* profile card */
-:root.light .profile-card{background:rgba(0,0,0,.02)}
-/* curtain slat */
-:root.light .curtain-slat{background:linear-gradient(180deg,#059669,#047857)}
-
-/* ── THEME TOGGLE BUTTON ── */
-.theme-toggle{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;border:1px solid var(--border);background:rgba(52,211,153,0.07);cursor:pointer;font-size:1rem;flex-shrink:0;transition:all .2s}
-.theme-toggle:hover{background:rgba(52,211,153,0.15);border-color:var(--accent)}
-
-/* ── SHUTDOWN MODAL ── */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-backdrop.open{opacity:1;pointer-events:all}
-.modal-box{background:var(--panel);border:1px solid rgba(248,113,113,.4);border-radius:18px;padding:28px 32px;max-width:380px;width:90%;text-align:center;box-shadow:0 0 40px rgba(248,113,113,.15);transform:scale(.92);transition:transform .2s}
-.modal-backdrop.open .modal-box{transform:scale(1)}
-.modal-icon{font-size:2.6rem;margin-bottom:10px}
-.modal-title{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:6px}
-.modal-desc{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-bottom:20px;line-height:1.7;white-space:pre-line}
-.modal-btns{display:flex;gap:10px;justify-content:center}
-.power-divider{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;display:flex;flex-direction:column;gap:8px}
-.power-label{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -1036,7 +939,6 @@ select option{background:var(--panel);color:var(--text)}
   </div>
   <div class="header-right">
     <div class="party-badge {{'on' if c.party_mode else ''}}">🎉 PARTY MODE</div>
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="切换 Light/Dark 模式">🌙</button>
     <div class="live-badge" id="refreshBadge" onclick="toggleRefresh()" title="Click to pause/resume auto-refresh" style="cursor:pointer">
       <div class="pulse" id="refreshPulse"></div>
       <span id="refreshLabel">LIVE</span>
@@ -1054,21 +956,14 @@ select option{background:var(--panel);color:var(--text)}
   </div>
 </header>
 
-{% if night_mode %}<div class="night-bar">🌙 Night Mode — alerts suppressed | Smart curtain closed | Ends at {{c.night_end}}:00 ({{night_remain_h}}h {{night_remain_m}}m remaining)</div>{% endif %}
+{% if night_mode %}<div class="night-bar">🌙 Night Mode — alerts suppressed until {{c.night_end}}:00 | Smart curtain closed</div>{% endif %}
 
-{% if virtual_mode or c.virtual_toggle %}
+{% if virtual_mode %}
 <div style="display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(251,191,36,.12),rgba(251,191,36,.06));border:1px solid rgba(251,191,36,.4);border-radius:12px;padding:11px 18px;margin-bottom:12px;font-family:var(--mono);font-size:.72rem;flex-wrap:wrap;gap:8px">
   <span style="font-size:1.1rem">🟡</span>
-  <b style="color:var(--amber)">VIRTUAL MODE {{'(startup flag)' if virtual_mode and not c.virtual_toggle else '(runtime toggle)' if c.virtual_toggle else ''}}</b>
-  <span style="color:var(--muted)">— No real hardware. Sensors are simulated. Relays won't fire.</span>
-  <a href="/toggle_virtual" class="btn {{'btn-g' if c.virtual_toggle else 'btn-a'}}" style="padding:4px 12px;font-size:.68rem;margin-left:auto">
-    {{'✅ Disable Virtual Mode' if c.virtual_toggle else '🟡 Enable Virtual Mode'}}
-  </a>
-</div>
-{% elif not virtual_mode %}
-<div style="display:flex;align-items:center;gap:8px;background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.15);border-radius:10px;padding:8px 16px;margin-bottom:10px;font-family:var(--mono);font-size:.65rem;color:var(--muted)">
-  <span>🟢 Real Hardware Mode</span>
-  <a href="/toggle_virtual" class="btn btn-ghost" style="padding:3px 10px;font-size:.62rem;margin-left:auto">Switch to Virtual</a>
+  <b style="color:var(--amber)">VIRTUAL MODE</b>
+  <span style="color:var(--muted)">— 无真实硬件，传感器数据为模拟值，继电器不会动作。</span>
+  <span style="color:var(--muted)">启动时加 <code style="background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;color:#fff">--virtual</code> 参数或硬件库缺失时自动启用。</span>
 </div>
 {% endif %}
 
@@ -1094,12 +989,11 @@ select option{background:var(--panel);color:var(--text)}
 <!-- HEALTH -->
 <div class="health-banner">
   <div class="health-score-wrap">
-    <svg class="health-ring" viewBox="0 0 60 60" id="healthRingSvg">
-      <circle cx="30" cy="30" r="25" fill="none" class="health-ring-track" stroke-width="5"/>
-      <circle cx="30" cy="30" r="25" fill="none" id="healthArc"
-        stroke="{{health_color}}" stroke-width="5"
-        stroke-dasharray="0 157" stroke-linecap="round" transform="rotate(-90 30 30)"/>
-      <text x="30" y="35" text-anchor="middle" class="health-ring-text" font-size="11" font-family="JetBrains Mono" font-weight="600" id="healthScore">{{health_score}}</text>
+    <svg class="health-ring" viewBox="0 0 60 60">
+      <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5"/>
+      <circle cx="30" cy="30" r="25" fill="none" stroke="{{health_color}}" stroke-width="5"
+        stroke-dasharray="{{health_dash}} 999" stroke-linecap="round" transform="rotate(-90 30 30)"/>
+      <text x="30" y="35" text-anchor="middle" fill="#fff" font-size="11" font-family="JetBrains Mono" font-weight="500">{{health_score}}</text>
     </svg>
     <div class="health-info">
       <h3>Plant Health — {{health_label}}</h3>
@@ -1316,52 +1210,6 @@ select option{background:var(--panel);color:var(--text)}
 
 <!-- ══════════ TAB: CONTROLS ══════════ -->
 <section class="tab-section" id="tab-controls">
-{% if virtual_mode or c.virtual_toggle %}
-    <div class="panel-header">
-      <span class="panel-title" style="color:var(--amber)">🟡 Simulate Sensors</span>
-      <span style="font-family:var(--mono);font-size:.6rem;color:var(--muted)">Drag sliders → instantly updates readings</span>
-    </div>
-    <form action="/sim_set" method="post" id="simForm">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">
-        <div class="field-row">
-          <label class="field-label">🌡️ Temperature (°C)</label>
-          <input type="range" name="sim_temp" min="-5" max="55" step="0.5" value="{{c.sim_temp}}"
-            oninput="this.nextElementSibling.textContent=this.value+'°C';autoSubmitSim()"
-            style="width:100%;accent-color:var(--red)">
-          <span style="font-family:var(--mono);font-size:.68rem;color:#fff">{{c.sim_temp}}°C</span>
-        </div>
-        <div class="field-row">
-          <label class="field-label">💧 Air Humidity (%)</label>
-          <input type="range" name="sim_hum" min="0" max="100" step="1" value="{{c.sim_hum}}"
-            oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"
-            style="width:100%;accent-color:var(--blue)">
-          <span style="font-family:var(--mono);font-size:.68rem;color:#fff">{{c.sim_hum}}%</span>
-        </div>
-        <div class="field-row">
-          <label class="field-label">🪴 Soil Moisture (%)</label>
-          <input type="range" name="sim_soil" min="0" max="100" step="1" value="{{c.sim_soil}}"
-            oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"
-            style="width:100%;accent-color:var(--accent)">
-          <span style="font-family:var(--mono);font-size:.68rem;color:#fff">{{c.sim_soil}}%</span>
-        </div>
-        <div class="field-row">
-          <label class="field-label">☀️ Light Level (%)</label>
-          <input type="range" name="sim_light" min="0" max="100" step="1" value="{{c.sim_light}}"
-            oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"
-            style="width:100%;accent-color:var(--amber)">
-          <span style="font-family:var(--mono);font-size:.68rem;color:#fff">{{c.sim_light}}%</span>
-        </div>
-        <div class="field-row">
-          <label class="field-label">🌧️ Rain Sensor (%)</label>
-          <input type="range" name="sim_rain" min="0" max="100" step="1" value="{{c.sim_rain}}"
-            oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"
-            style="width:100%;accent-color:var(--purple)">
-          <span style="font-family:var(--mono);font-size:.68rem;color:#fff">{{c.sim_rain}}%</span>
-        </div>
-      </div>
-    </form>
-  </div>
-{% endif %}
 <div class="three-col">
   <div class="panel">
     <div class="panel-header"><span class="panel-title">🚿 Pump Controls</span></div>
@@ -1541,7 +1389,7 @@ select option{background:var(--panel);color:var(--text)}
       <a href="/party_stop" class="btn btn-r" style="justify-content:center">🛑 STOP PARTY</a>
       <div style="font-family:var(--mono);font-size:.64rem;color:var(--muted);line-height:1.7;margin-top:8px;padding:12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid var(--border)">
         ⚠️ <b style="color:var(--amber)">Warning:</b> Party mode bypasses auto irrigation and directly controls hardware relays.<br><br>
-        🚿 Relay A = Pump (GPIO17)<br>
+        🚿 Relay A = Pump (GPIO22)<br>
         🪟 Relay B = Motor/Curtain (GPIO27)<br><br>
         Use short ON times for pumps to avoid overflow. Motor relay controls curtain travel — don't exceed safe travel time.
       </div>
@@ -1656,21 +1504,6 @@ select option{background:var(--panel);color:var(--text)}
     </div>
   </div>
 </div>
-<!-- Virtual mode toggle card -->
-<div class="panel" style="margin-bottom:12px;border-color:rgba(251,191,36,.25)">
-  <div class="panel-header"><span class="panel-title" style="color:var(--amber)">🟡 Virtual Mode</span></div>
-  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-    <div style="font-family:var(--mono);font-size:.72rem;color:var(--muted);flex:1">
-      Currently: <b style="color:{{'#fbbf24' if virtual_mode or c.virtual_toggle else '#34d399'}}">
-        {{'VIRTUAL (startup)' if virtual_mode and not c.virtual_toggle else 'VIRTUAL (toggle)' if c.virtual_toggle else 'REAL HARDWARE'}}
-      </b><br>
-      <span style="font-size:.62rem">Virtual mode uses simulated sensor data. Relays are no-ops. Safe for testing without hardware.</span>
-    </div>
-    <a href="/toggle_virtual" class="btn {{'btn-g' if c.virtual_toggle else 'btn-a'}}">
-      {{'✅ Disable Virtual Mode' if c.virtual_toggle else '🟡 Enable Virtual Mode'}}
-    </a>
-  </div>
-</div>
 </section>
 
 <!-- ══════════ TAB: TELEGRAM ══════════ -->
@@ -1743,26 +1576,6 @@ select option{background:var(--panel);color:var(--text)}
 </div>
 
 <script>
-// ── THEME TOGGLE ──
-(function(){
-  if(localStorage.getItem('gh_theme')==='light') _applyTheme('light', false);
-})();
-function _applyTheme(mode, save){
-  const isLight = mode === 'light';
-  if(isLight) document.documentElement.classList.add('light');
-  else         document.documentElement.classList.remove('light');
-  const btn = document.getElementById('themeToggle');
-  if(btn) btn.textContent = isLight ? '☀️' : '🌙';
-  // Update ring text color to match theme
-  const rt = document.querySelector('.health-ring-text');
-  if(rt) rt.setAttribute('fill', isLight ? '#0a2018' : '#e8faf3');
-  if(save) localStorage.setItem('gh_theme', mode);
-}
-function toggleTheme(){
-  const isLight = document.documentElement.classList.contains('light');
-  _applyTheme(isLight ? 'dark' : 'light', true);
-}
-
 // ── TAB NAVIGATION ──
 function showTab(id, el){
   document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
@@ -1776,21 +1589,6 @@ function showTab(id, el){
     loadVpdChart(1,vtabs[0]);
   }
 }
-
-// ── HEALTH RING ──
-(function(){
-  const score = {{health_score}};
-  const arc   = document.getElementById('healthArc');
-  const txt   = document.getElementById('healthScore');
-  if(!arc) return;
-  const r = 25, circ = 2*Math.PI*r, dash = (score/100)*circ;
-  arc.setAttribute('stroke-dasharray', dash.toFixed(2)+' '+circ.toFixed(2));
-  arc.setAttribute('stroke', score>=65?'#34d399':score>=45?'#fbbf24':'#f87171');
-  if(txt) txt.textContent = score;
-  // Apply correct text color for current theme
-  const rt = document.querySelector('.health-ring-text');
-  if(rt) rt.setAttribute('fill', document.documentElement.classList.contains('light') ? '#0a2018' : '#e8faf3');
-})();
 
 // ── CURTAIN VIS ──
 (function(){
@@ -1806,51 +1604,6 @@ function showTab(id, el){
   });
 })();
 
-// ── LIVE PARTIAL UPDATE via /api/status ──
-// Updates key metric elements every 5s WITHOUT full page reload
-const LIVE_IDS = {
-  'lv-temp':    s => s.temp?.toFixed(1)+'°C',
-  'lv-hum':     s => s.hum?.toFixed(1)+'%',
-  'lv-soil':    s => s.soil?.toFixed(1)+'%',
-  'lv-light':   s => s.light?.toFixed(1)+'%',
-  'lv-rain':    s => s.rain?.toFixed(1)+'%',
-  'lv-vpd':     s => s.vpd+' kPa',
-  'lv-dew':     s => s.dew_point+'°C',
-  'lv-pump':    s => s.pump + (s.pump_manual_on ? ' 🔒':''),
-  'lv-curtain': s => s.motor_pos,
-  'lv-health':  s => s.health_score+'%',
-  'lv-comfort': s => s.comfort,
-  'lv-uptime':  s => s.uptime,
-};
-
-async function liveUpdate(){
-  try{
-    const res = await fetch('/api/status');
-    if(!res.ok) return;
-    const s = await res.json();
-
-    // Update labeled spans
-    for(const [id, fn] of Object.entries(LIVE_IDS)){
-      const el = document.getElementById(id);
-      if(el) el.textContent = fn(s);
-    }
-
-    // Animate health ring
-    const arc = document.getElementById('healthArc');
-    if(arc){
-      const circ = 2 * Math.PI * 25;
-      arc.setAttribute('stroke-dasharray', ((s.health_score/100)*circ).toFixed(2)+' '+circ.toFixed(2));
-      arc.setAttribute('stroke', s.health_score>=65?'#34d399':s.health_score>=45?'#fbbf24':'#f87171');
-      const txt = document.getElementById('healthScore');
-      if(txt) txt.textContent = s.health_score;
-      const rt = document.querySelector('.health-ring-text');
-      if(rt) rt.setAttribute('fill', document.documentElement.classList.contains('light') ? '#0a2018' : '#e8faf3');
-    }
-  } catch(e){ /* silent */ }
-}
-setInterval(liveUpdate, 5000);
-liveUpdate();
-
 // ── CHARTS ──
 let myChart=null, vpdChartObj=null;
 
@@ -1858,66 +1611,21 @@ async function loadChart(hours, btn){
   document.querySelectorAll('#tab-charts .hist-tab').forEach(b=>b.classList.remove('on'));
   if(btn) btn.classList.add('on');
   try{
-    const [histRes, waterRes] = await Promise.all([
-      fetch('/api/history?hours='+hours),
-      fetch('/api/watering?limit=50')
-    ]);
-    const rows  = await histRes.json();
-    const wlogs = await waterRes.json();
-
-    const labels = rows.map(r=>{
-      const d=new Date(r[0]*1000);
-      return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-    });
-
-    // Build pump event annotation lines
-    const annotations = {};
-    wlogs.forEach((w,i)=>{
-      const wTime = new Date(w.ts*1000);
-      const wLabel = wTime.getHours().toString().padStart(2,'0')+':'+wTime.getMinutes().toString().padStart(2,'0');
-      // Find closest label index
-      const idx = labels.indexOf(wLabel);
-      if(idx < 0) return;
-      annotations['water'+i] = {
-        type: 'line',
-        xMin: idx, xMax: idx,
-        borderColor: 'rgba(56,189,248,0.6)',
-        borderWidth: 1.5,
-        borderDash: [4,3],
-        label: {
-          display: true,
-          content: '💧',
-          position: 'start',
-          color: '#38bdf8',
-          font: { size: 10 }
-        }
-      };
-    });
-
+    const res=await fetch('/api/history?hours='+hours);
+    const rows=await res.json();
+    const labels=rows.map(r=>{const d=new Date(r[0]*1000);return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')});
     if(myChart) myChart.destroy();
     const ctx=document.getElementById('histChart').getContext('2d');
-    myChart=new Chart(ctx,{
-      type:'line',
-      data:{labels,datasets:[
-        {label:'Temp°C', data:rows.map(r=>r[1]!=null?r[1]:null), borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
-        {label:'Humid%', data:rows.map(r=>r[2]!=null?r[2]:null), borderColor:'#38bdf8',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
-        {label:'Soil%',  data:rows.map(r=>r[3]!=null?r[3]:null), borderColor:'#34d399',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
-        {label:'Light%', data:rows.map(r=>r[4]!=null?r[4]:null), borderColor:'#fbbf24',borderWidth:1.2,pointRadius:0,tension:.4,fill:false,spanGaps:true},
-        {label:'Rain%',  data:rows.map(r=>r[5]!=null?r[5]:null), borderColor:'#a78bfa',borderWidth:1.2,pointRadius:0,tension:.4,fill:false,spanGaps:true},
-      ]},
-      options:{
-        responsive:true,maintainAspectRatio:true,
-        interaction:{mode:'index',intersect:false},
-        plugins:{
-          legend:{labels:{color:'#3d6457',font:{size:9,family:"'JetBrains Mono'"}}},
-          annotation:{annotations}
-        },
-        scales:{
-          x:{ticks:{color:'#3d6457',font:{size:8},maxTicksLimit:10},grid:{color:'rgba(255,255,255,0.02)'}},
-          y:{ticks:{color:'#3d6457',font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'}}
-        }
-      }
-    });
+    myChart=new Chart(ctx,{type:'line',data:{labels,datasets:[
+      {label:'Temp°C', data:rows.map(r=>r[1]!=null?r[1]:null), borderColor:'#f87171',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
+      {label:'Humid%', data:rows.map(r=>r[2]!=null?r[2]:null), borderColor:'#38bdf8',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
+      {label:'Soil%',  data:rows.map(r=>r[3]!=null?r[3]:null), borderColor:'#34d399',borderWidth:1.5,pointRadius:0,tension:.4,fill:false,spanGaps:true},
+      {label:'Light%', data:rows.map(r=>r[4]!=null?r[4]:null), borderColor:'#fbbf24',borderWidth:1.2,pointRadius:0,tension:.4,fill:false,spanGaps:true},
+      {label:'Rain%',  data:rows.map(r=>r[5]!=null?r[5]:null), borderColor:'#a78bfa',borderWidth:1.2,pointRadius:0,tension:.4,fill:false,spanGaps:true},
+    ]},options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#3d6457',font:{size:9,family:"'JetBrains Mono'"}}}},
+      scales:{x:{ticks:{color:'#3d6457',font:{size:8},maxTicksLimit:10},grid:{color:'rgba(255,255,255,0.02)'}},
+              y:{ticks:{color:'#3d6457',font:{size:8}},grid:{color:'rgba(255,255,255,0.04)'}}}}});
   } catch(e){ console.error('Chart load failed:',e); }
 }
 
@@ -1940,21 +1648,9 @@ async function loadVpdChart(hours, btn){
   } catch(e){ console.error('VPD chart load failed:',e); }
 }
 
-// ── SIM SLIDER AUTO-SUBMIT (debounced 600ms) ──
-let _simTimer = null;
-function autoSubmitSim(){
-  clearTimeout(_simTimer);
-  _simTimer = setTimeout(()=>{
-    const form = document.getElementById('simForm');
-    if(!form) return;
-    const data = new FormData(form);
-    fetch('/sim_set', {method:'POST', body: data})
-      .catch(e => console.error('sim_set failed:', e));
-  }, 600);
-}
-
-// ── AUTO REFRESH (full page reload fallback) ──
+// ── AUTO REFRESH ──
 (function(){
+  // Restore saved prefs from localStorage
   const savedPaused   = localStorage.getItem('gh_paused')   === '1';
   const savedInterval = parseInt(localStorage.getItem('gh_interval') || '5', 10);
 
@@ -1962,6 +1658,7 @@ function autoSubmitSim(){
   let interval = savedInterval;
   let counter  = interval;
 
+  // Sync interval <select> to saved value
   const sel = document.getElementById('refreshInterval');
   if(sel){
     [...sel.options].forEach(o => { if(parseInt(o.value)===interval) o.selected=true; });
@@ -1989,13 +1686,15 @@ function autoSubmitSim(){
   }
 
   window.toggleRefresh = function(){
-    paused = !paused; counter = interval;
+    paused = !paused;
+    counter = interval;
     localStorage.setItem('gh_paused', paused ? '1' : '0');
     updateBadge();
   };
 
   window.changeInterval = function(val){
-    interval = parseInt(val, 10); counter = interval;
+    interval = parseInt(val, 10);
+    counter  = interval;
     localStorage.setItem('gh_interval', String(interval));
     updateBadge();
   };
@@ -2005,10 +1704,12 @@ function autoSubmitSim(){
   setInterval(()=>{
     if(paused) return;
     counter--;
+    // Update countdown text directly without re-calling updateBadge every second
     const countdown = document.getElementById('refreshCountdown');
     const cdEl      = document.getElementById('cd');
     if(countdown) countdown.textContent = counter+'s';
     if(cdEl)      cdEl.textContent = counter;
+    // Also patch footer span if it's there
     const footer = document.getElementById('footerStatus');
     if(footer && !paused) footer.innerHTML = 'auto-refresh in <span id="cd">'+counter+'</span>s';
     if(counter <= 0) location.reload();
@@ -2033,27 +1734,11 @@ def index():
     sc,wc,ac = get_db_stats()
     prof = PLANT_PROFILES.get(cfg["plant_profile"], PLANT_PROFILES["custom"])
     masked = TELEGRAM_TOKEN[:8]+"***"+TELEGRAM_TOKEN[-4:]
-
-    # Compute night remaining time
-    night_remain_h, night_remain_m = 0, 0
-    if is_night():
-        now_h = time.localtime().tm_hour
-        now_m = time.localtime().tm_min
-        end_h = cfg["night_end"]
-        end_mins = end_h * 60
-        now_mins = now_h * 60 + now_m
-        if now_mins > end_mins:
-            remain = (24*60 - now_mins) + end_mins
-        else:
-            remain = end_mins - now_mins
-        night_remain_h, night_remain_m = divmod(remain, 60)
-
     return render_template_string(HTML,
         d=data, c=cfg, version=VERSION, uptime=uptime_str(),
         time_now=time.strftime('%H:%M:%S'), events=evts, water_log=wlog,
         alert_log=alog, schedule=watering_schedule, profiles=PLANT_PROFILES,
         profile_name=prof["name"], night_mode=is_night(),
-        night_remain_h=night_remain_h, night_remain_m=night_remain_m,
         cooldown_remain=cooldown_remain(), health_score=hs,
         health_label=health_label(hs), health_color=hc, health_dash=hd,
         db_sc=sc, db_wc=wc, db_ac=ac, db_path=DB_PATH,
@@ -2068,8 +1753,7 @@ def api_status():
     return jsonify({**data,**{k:v for k,v in cfg.items() if k not in ('boot_time','last_watered_ts')},
         "health_score":health_score(),"uptime":uptime_str(),
         "night_mode":is_night(),"cooldown_remain":cooldown_remain(),
-        "virtual_mode":VIRTUAL, "virtual_toggle": cfg.get("virtual_toggle",False),
-        "is_virtual": is_virtual()})
+        "virtual_mode":VIRTUAL})
 
 @app.route('/api/events')
 def api_events():
@@ -2108,51 +1792,8 @@ def emergency_stop():
     log_event("system","EMERGENCY STOP activated")
     return redirect(url_for('index'))
 
-@app.route('/toggle_virtual')
-def toggle_virtual_route():
-    cfg["virtual_toggle"] = not cfg.get("virtual_toggle", False)
-    log_event("system", f"Virtual mode {'enabled' if cfg['virtual_toggle'] else 'disabled'} via web")
-    return redirect(url_for('index'))
-
-@app.route('/sim_set', methods=['POST'])
-def sim_set():
-    """Set individual simulated sensor values when virtual mode is active."""
-    f = request.form
-    try: _vsim["temp"]  = float(f.get("sim_temp",  _vsim["temp"]))
-    except: pass
-    try: _vsim["hum"]   = float(f.get("sim_hum",   _vsim["hum"]))
-    except: pass
-    try: _vsim["soil"]  = float(f.get("sim_soil",  _vsim["soil"]))
-    except: pass
-    try: _vsim["light"] = float(f.get("sim_light", _vsim["light"]))
-    except: pass
-    try: _vsim["rain"]  = float(f.get("sim_rain",  _vsim["rain"]))
-    except: pass
-    # Also update cfg mirrors for display
-    cfg["sim_temp"]  = _vsim["temp"]
-    cfg["sim_hum"]   = _vsim["hum"]
-    cfg["sim_soil"]  = _vsim["soil"]
-    cfg["sim_light"] = _vsim["light"]
-    cfg["sim_rain"]  = _vsim["rain"]
-    return redirect(url_for('index'))
-
-@app.route('/api/sim_set', methods=['POST'])
-def api_sim_set():
-    """JSON API for sim_set — accepts application/json or form data."""
-    if request.is_json:
-        d = request.get_json(silent=True) or {}
-    else:
-        d = request.form
-    for k in ("temp","hum","soil","light","rain"):
-        if k in d:
-            try:
-                v = float(d[k])
-                _vsim[k] = max(0, min(100 if k != "temp" else 60, v))
-                cfg[f"sim_{k}"] = _vsim[k]
-            except: pass
-    return jsonify({"ok": True, "vsim": dict(_vsim)})
-
-
+@app.route('/motor')
+def web_motor():
     t="CLOSED" if cfg["motor_pos"]=="OPEN" else "OPEN"
     threading.Thread(target=run_motor,args=(t,"web"),daemon=True).start(); return redirect(url_for('index'))
 
@@ -2364,7 +2005,6 @@ async def register_commands(bot):
         BotCommand("cooldown",   "⚙️ Watering cooldown s"),
         BotCommand("reset",      "↺ Reset daily stats"),
         BotCommand("emergency",  "🛑 Emergency stop all"),
-        BotCommand("toggle_virtual", "🟡 Toggle virtual/real mode"),
     ])
 
 @admin_only
@@ -2646,18 +2286,6 @@ async def cmd_reset(u,c):
     log_event("system","Stats reset (Telegram)"); await u.message.reply_text("✅ Daily counters reset.",reply_markup=main_kb())
 
 @admin_only
-async def cmd_toggle_virtual(u: Update, c: ContextTypes.DEFAULT_TYPE):
-    cfg["virtual_toggle"] = not cfg.get("virtual_toggle", False)
-    state = "enabled 🟡" if cfg["virtual_toggle"] else "disabled 🟢"
-    log_event("system", f"Virtual mode {state} via Telegram")
-    target = u.message or u.callback_query.message
-    await target.reply_text(
-        f"🟡 *Virtual Mode {state}*\n"
-        f"{'Sensors are now simulated. Relays are no-ops.' if cfg['virtual_toggle'] else 'Real hardware readings restored.'}",
-        parse_mode='Markdown', reply_markup=main_kb())
-
-
-@admin_only
 async def btn_callback(u: Update, c: ContextTypes.DEFAULT_TYPE):
     q=u.callback_query; await q.answer(); act=q.data
     if act=="status":      await cmd_status(u,c)
@@ -2793,7 +2421,6 @@ def main():
         ("th_rain",cmd_th_rain),("th_temp",cmd_th_temp),
         ("pump_time",cmd_pump_time),("motor_time",cmd_motor_time),("cooldown",cmd_cooldown),
         ("reset",cmd_reset),("emergency",cmd_emergency),
-        ("toggle_virtual", cmd_toggle_virtual),
     ]
     for cmd,fn in cmds: bot.add_handler(CommandHandler(cmd,fn))
 
