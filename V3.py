@@ -991,135 +991,129 @@ select option{background:#101f24}
   <div class="health-score-wrap">
     <svg class="health-ring" viewBox="0 0 60 60">
       <circle cx="30" cy="30" r="25" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5"/>
-      <circle cx="30" cy="30" r="25" fill="none" stroke="{{health_color}}" stroke-width="5"
+      <circle id="lv-health-arc" cx="30" cy="30" r="25" fill="none" stroke="{{health_color}}" stroke-width="5"
         stroke-dasharray="{{health_dash}} 999" stroke-linecap="round" transform="rotate(-90 30 30)"/>
-      <text x="30" y="35" text-anchor="middle" fill="#fff" font-size="11" font-family="JetBrains Mono" font-weight="500">{{health_score}}</text>
+      <text id="lv-health-score" x="30" y="35" text-anchor="middle" fill="#fff" font-size="11" font-family="JetBrains Mono" font-weight="500">{{health_score}}</text>
     </svg>
     <div class="health-info">
-      <h3>Plant Health — {{health_label}}</h3>
-      <p>Comfort: {{d.comfort}} | Profile: {{profile_name}}</p>
+      <h3>Plant Health — <span id="lv-health-label">{{health_label}}</span></h3>
+      <p>Comfort: <span id="lv-comfort">{{d.comfort}}</span> | Profile: {{profile_name}}</p>
     </div>
   </div>
   <div class="health-pills">
-    <div class="h-pill {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else ''}}">🌡️ Temp <b>{{d.temp|round(1)}}°C</b></div>
-    <div class="h-pill {{'bad' if d.soil < c.th_soil_crit else ('warn' if d.soil < c.th_soil else '')}}">🪴 Soil <b>{{d.soil|round(1)}}%</b></div>
-    <div class="h-pill {{'warn' if d.hum < c.th_air else ''}}">💧 Hum <b>{{d.hum|round(1)}}%</b></div>
-    <div class="h-pill {{'warn' if d.is_bright else ''}}">☀️ Light <b>{{d.light|round(1)}}%</b></div>
-    <div class="h-pill {{'warn' if d.is_raining else ''}}">🌧️ Rain <b>{{d.rain|round(1)}}%</b></div>
-    <div class="h-pill {{'warn' if d.vpd > 1.6 or d.vpd < 0.3 else ''}}">💨 VPD <b>{{d.vpd}}kPa</b></div>
-    <div class="h-pill {{'bad' if not d.last_read_ok else ''}}">🔌 <b>{{'ERR' if not d.last_read_ok else 'OK'}}</b></div>
+    <div id="lv-pill-temp" class="h-pill {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else ''}}">🌡️ Temp <b id="lv-temp">{{d.temp|round(1)}}°C</b></div>
+    <div id="lv-pill-soil" class="h-pill {{'bad' if d.soil < c.th_soil_crit else ('warn' if d.soil < c.th_soil else '')}}">🪴 Soil <b id="lv-soil">{{d.soil|round(1)}}%</b></div>
+    <div id="lv-pill-hum" class="h-pill {{'warn' if d.hum < c.th_air else ''}}">💧 Hum <b id="lv-hum">{{d.hum|round(1)}}%</b></div>
+    <div id="lv-pill-light" class="h-pill {{'warn' if d.is_bright else ''}}">☀️ Light <b id="lv-light">{{d.light|round(1)}}%</b></div>
+    <div id="lv-pill-rain" class="h-pill {{'warn' if d.is_raining else ''}}">🌧️ Rain <b id="lv-rain">{{d.rain|round(1)}}%</b></div>
+    <div id="lv-pill-vpd" class="h-pill {{'warn' if d.vpd > 1.6 or d.vpd < 0.3 else ''}}">💨 VPD <b id="lv-vpd">{{d.vpd}}kPa</b></div>
+    <div id="lv-pill-sensor" class="h-pill {{'bad' if not d.last_read_ok else ''}}">🔌 <b id="lv-sensor-ok">{{'ERR' if not d.last_read_ok else 'OK'}}</b></div>
   </div>
 </div>
 
 <!-- ENV BAR -->
 <div class="env-bar">
-  <div class="env-pill {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else 'ok'}}"><div class="env-pill-dot"></div>🌡️ Temp<span class="env-pill-val">{{d.temp|round(1)}}°C {{d.temp_trend}}</span></div>
-  <div class="env-pill {{'warn' if d.is_bright else 'ok'}}"><div class="env-pill-dot"></div>☀️ Light<span class="env-pill-val">{{d.light|round(1)}}%</span></div>
-  <div class="env-pill {{'warn' if d.is_raining else 'ok'}}"><div class="env-pill-dot"></div>🌧️ Rain<span class="env-pill-val">{{'🌧️ RAIN' if d.is_raining else '☀️ DRY'}}</span></div>
-  <div class="env-pill {{'ok' if c.auto_mode else 'warn'}}"><div class="env-pill-dot"></div>🤖 Mode<span class="env-pill-val">{{'AUTO' if c.auto_mode else 'MANUAL'}}</span></div>
-  <div class="env-pill {{'bad' if c.pump == 'ON' else ('warn' if c.pump == 'PARTY' else 'ok')}}"><div class="env-pill-dot"></div>🚿 Pump<span class="env-pill-val">{{c.pump}}{{'🔒' if c.pump_manual_on else ''}}</span></div>
-  <div class="env-pill {{'warn' if night_mode else 'ok'}}"><div class="env-pill-dot"></div>🕐 Period<span class="env-pill-val">{{'NIGHT 🌙' if night_mode else 'DAY ☀️'}}</span></div>
-  <div class="env-pill {{'warn' if d.vpd > 1.6 or d.vpd < 0.4 else 'ok'}}"><div class="env-pill-dot"></div>💨 VPD<span class="env-pill-val">{{d.vpd}}kPa</span></div>
-  <div class="env-pill ok"><div class="env-pill-dot"></div>🌡️ Dew<span class="env-pill-val">{{d.dew_point}}°C</span></div>
+  <div id="lv-envpill-temp" class="env-pill {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else 'ok'}}"><div class="env-pill-dot"></div>🌡️ Temp<span id="lv-env-temp" class="env-pill-val">{{d.temp|round(1)}}°C {{d.temp_trend}}</span></div>
+  <div id="lv-envpill-light" class="env-pill {{'warn' if d.is_bright else 'ok'}}"><div class="env-pill-dot"></div>☀️ Light<span id="lv-env-light" class="env-pill-val">{{d.light|round(1)}}%</span></div>
+  <div id="lv-envpill-rain" class="env-pill {{'warn' if d.is_raining else 'ok'}}"><div class="env-pill-dot"></div>🌧️ Rain<span id="lv-env-rain" class="env-pill-val">{{'🌧️ RAIN' if d.is_raining else '☀️ DRY'}}</span></div>
+  <div id="lv-envpill-mode" class="env-pill {{'ok' if c.auto_mode else 'warn'}}"><div class="env-pill-dot"></div>🤖 Mode<span id="lv-env-mode" class="env-pill-val">{{'AUTO' if c.auto_mode else 'MANUAL'}}</span></div>
+  <div id="lv-envpill-pump" class="env-pill {{'bad' if c.pump == 'ON' else ('warn' if c.pump == 'PARTY' else 'ok')}}"><div class="env-pill-dot"></div>🚿 Pump<span id="lv-env-pump" class="env-pill-val">{{c.pump}}{{'🔒' if c.pump_manual_on else ''}}</span></div>
+  <div id="lv-envpill-period" class="env-pill {{'warn' if night_mode else 'ok'}}"><div class="env-pill-dot"></div>🕐 Period<span id="lv-env-period" class="env-pill-val">{{'NIGHT 🌙' if night_mode else 'DAY ☀️'}}</span></div>
+  <div id="lv-envpill-vpd" class="env-pill {{'warn' if d.vpd > 1.6 or d.vpd < 0.4 else 'ok'}}"><div class="env-pill-dot"></div>💨 VPD<span id="lv-env-vpd" class="env-pill-val">{{d.vpd}}kPa</span></div>
+  <div class="env-pill ok"><div class="env-pill-dot"></div>🌡️ Dew<span id="lv-env-dew" class="env-pill-val">{{d.dew_point}}°C</span></div>
 </div>
 
 <!-- METRIC CARDS -->
 <div class="metrics">
-  <div class="card {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else ''}}">
+  <div id="lv-card-temp" class="card {{'bad' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else ''}}">
     <div class="card-icon">🌡️</div><div class="card-label">Temperature</div>
-    <div class="card-val {{'r' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else 'g'}}">{{d.temp|round(1)}}°<span class="trend">{{d.temp_trend}}</span></div>
-    <div class="card-sub">Today {{d.min_t|round(1) if d.min_t is not none else '--'}} – {{d.max_t|round(1) if d.max_t is not none else '--'}}°C<br>Heat Index: {{d.heat_index|round(1)}}°C</div>
-    {% if d.temp > c.th_temp_high %}<span class="card-tag tag-r">⚠ Too Hot</span>{% elif d.temp < c.th_temp_low %}<span class="card-tag tag-r">⚠ Too Cold</span>{% else %}<span class="card-tag tag-g">✓ Normal</span>{% endif %}
-    <div class="bar-t"><div class="bar-f" style="width:{{((d.temp+10)/55*100)|int}}%;background:linear-gradient(90deg,#34d399,#fbbf24,#f87171)"></div></div>
+    <div id="lv-card-temp-val" class="card-val {{'r' if d.temp > c.th_temp_high or d.temp < c.th_temp_low else 'g'}}">{{d.temp|round(1)}}°<span id="lv-temp-trend" class="trend">{{d.temp_trend}}</span></div>
+    <div class="card-sub">Today <span id="lv-temp-range">{{d.min_t|round(1) if d.min_t is not none else '--'}} – {{d.max_t|round(1) if d.max_t is not none else '--'}}</span>°C<br>Heat Index: <span id="lv-heat-index">{{d.heat_index|round(1)}}</span>°C</div>
+    <span id="lv-card-temp-tag" class="card-tag {% if d.temp > c.th_temp_high %}tag-r{% elif d.temp < c.th_temp_low %}tag-r{% else %}tag-g{% endif %}">{% if d.temp > c.th_temp_high %}⚠ Too Hot{% elif d.temp < c.th_temp_low %}⚠ Too Cold{% else %}✓ Normal{% endif %}</span>
+    <div class="bar-t"><div id="lv-bar-temp" class="bar-f" style="width:{{((d.temp+10)/55*100)|int}}%;background:linear-gradient(90deg,#34d399,#fbbf24,#f87171)"></div></div>
   </div>
   <div class="card">
     <div class="card-icon">💧</div><div class="card-label">Air Humidity</div>
-    <div class="card-val b">{{d.hum|round(1)}}%<span class="trend">{{d.hum_trend}}</span></div>
-    <div class="card-sub">Target >{{c.th_air}}% | High >{{c.th_hum_high}}%<br>Abs: {{d.abs_hum}}g/m³ | Today {{d.min_h|round(1) if d.min_h is not none else '--'}}–{{d.max_h|round(1) if d.max_h is not none else '--'}}%</div>
-    {% if d.hum > c.th_hum_high %}<span class="card-tag tag-a">⚠ Mold Risk</span>{% elif d.hum < c.th_air %}<span class="card-tag tag-a">⚠ Low</span>{% else %}<span class="card-tag tag-g">✓ Good</span>{% endif %}
-    <div class="bar-t"><div class="bar-f" style="width:{{d.hum|int}}%;background:#38bdf8"></div></div>
+    <div id="lv-card-hum-val" class="card-val b">{{d.hum|round(1)}}%<span id="lv-hum-trend" class="trend">{{d.hum_trend}}</span></div>
+    <div class="card-sub">Target >{{c.th_air}}% | High >{{c.th_hum_high}}%<br>Abs: <span id="lv-abs-hum">{{d.abs_hum}}</span>g/m³ | Today <span id="lv-hum-range">{{d.min_h|round(1) if d.min_h is not none else '--'}}–{{d.max_h|round(1) if d.max_h is not none else '--'}}</span>%</div>
+    <span id="lv-card-hum-tag" class="card-tag {% if d.hum > c.th_hum_high %}tag-a{% elif d.hum < c.th_air %}tag-a{% else %}tag-g{% endif %}">{% if d.hum > c.th_hum_high %}⚠ Mold Risk{% elif d.hum < c.th_air %}⚠ Low{% else %}✓ Good{% endif %}</span>
+    <div class="bar-t"><div id="lv-bar-hum" class="bar-f" style="width:{{d.hum|int}}%;background:#38bdf8"></div></div>
   </div>
-  <div class="card {{'bad' if d.soil < c.th_soil_crit else ('warn' if d.soil < c.th_soil else '')}}">
+  <div id="lv-card-soil" class="card {{'bad' if d.soil < c.th_soil_crit else ('warn' if d.soil < c.th_soil else '')}}">
     <div class="card-icon">🪴</div><div class="card-label">Soil Moisture</div>
-    <div class="card-val {{'r' if d.soil < c.th_soil_crit else ('a' if d.soil < c.th_soil else 'g')}}">{{d.soil|round(1)}}%<span class="trend">{{d.soil_trend}}</span></div>
-    <div class="card-sub">Crit&lt;{{c.th_soil_crit}}% | Target>{{c.th_soil}}%<br>EC ~{{d.soil_ec}} dS/m | Today {{d.min_soil|round(1) if d.min_soil is not none else '--'}}–{{d.max_soil|round(1) if d.max_soil is not none else '--'}}%</div>
-    {% if d.soil < c.th_soil_crit %}<span class="card-tag tag-r">‼ Critical Dry</span>{% elif d.soil < c.th_soil %}<span class="card-tag tag-a">⚠ Dry</span>{% else %}<span class="card-tag tag-g">✓ Moist</span>{% endif %}
-    <div class="bar-t"><div class="bar-f" style="width:{{d.soil|int}}%;background:#34d399"></div></div>
+    <div id="lv-card-soil-val" class="card-val {{'r' if d.soil < c.th_soil_crit else ('a' if d.soil < c.th_soil else 'g')}}">{{d.soil|round(1)}}%<span id="lv-soil-trend" class="trend">{{d.soil_trend}}</span></div>
+    <div class="card-sub">Crit&lt;{{c.th_soil_crit}}% | Target>{{c.th_soil}}%<br>EC ~<span id="lv-soil-ec">{{d.soil_ec}}</span> dS/m | Today <span id="lv-soil-range">{{d.min_soil|round(1) if d.min_soil is not none else '--'}}–{{d.max_soil|round(1) if d.max_soil is not none else '--'}}</span>%</div>
+    <span id="lv-card-soil-tag" class="card-tag {% if d.soil < c.th_soil_crit %}tag-r{% elif d.soil < c.th_soil %}tag-a{% else %}tag-g{% endif %}">{% if d.soil < c.th_soil_crit %}‼ Critical Dry{% elif d.soil < c.th_soil %}⚠ Dry{% else %}✓ Moist{% endif %}</span>
+    <div class="bar-t"><div id="lv-bar-soil" class="bar-f" style="width:{{d.soil|int}}%;background:#34d399"></div></div>
   </div>
-  <div class="card {{'warn' if d.is_bright else ''}}">
+  <div id="lv-card-light" class="card {{'warn' if d.is_bright else ''}}">
     <div class="card-icon">☀️</div><div class="card-label">Light Level</div>
-    <div class="card-val {{'a' if d.is_bright else 'g'}}">{{d.light|round(1)}}%</div>
-    <div class="card-sub">Threshold {{c.th_light}}% | Peak {{d.max_light|round(1)}}%<br>ET ~{{d.evap_rate}}mm/h</div>
-    <span class="card-tag {{'tag-a' if d.is_bright else 'tag-g'}}">{{'☀️ Bright' if d.is_bright else ('Moderate' if d.light > 40 else 'Low Light')}}</span>
-    <div class="bar-t"><div class="bar-f" style="width:{{d.light|int}}%;background:#fbbf24"></div></div>
+    <div id="lv-card-light-val" class="card-val {{'a' if d.is_bright else 'g'}}">{{d.light|round(1)}}%</div>
+    <div class="card-sub">Threshold {{c.th_light}}% | Peak <span id="lv-peak-light">{{d.max_light|round(1)}}</span>%<br>ET ~<span id="lv-evap">{{d.evap_rate}}</span>mm/h</div>
+    <span id="lv-card-light-tag" class="card-tag {{'tag-a' if d.is_bright else 'tag-g'}}">{{'☀️ Bright' if d.is_bright else ('Moderate' if d.light > 40 else 'Low Light')}}</span>
+    <div class="bar-t"><div id="lv-bar-light" class="bar-f" style="width:{{d.light|int}}%;background:#fbbf24"></div></div>
   </div>
-  <div class="card {{'warn' if d.is_raining else ''}}">
+  <div id="lv-card-rain" class="card {{'warn' if d.is_raining else ''}}">
     <div class="card-icon">🌧️</div><div class="card-label">Rain Sensor</div>
-    <div class="card-val {{'b' if d.is_raining else 'g'}}">{{d.rain|round(1)}}%</div>
+    <div id="lv-card-rain-val" class="card-val {{'b' if d.is_raining else 'g'}}">{{d.rain|round(1)}}%</div>
     <div class="card-sub">Trigger >{{c.th_rain}}%<br>Skip irrigation: {{'✓' if c.rain_skip_water else '✗'}}</div>
-    <span class="card-tag {{'tag-a' if d.is_raining else 'tag-g'}}">{{'🌧️ Raining' if d.is_raining else '☀️ Dry'}}</span>
-    <div class="bar-t"><div class="bar-f" style="width:{{d.rain|int}}%;background:#38bdf8"></div></div>
+    <span id="lv-card-rain-tag" class="card-tag {{'tag-a' if d.is_raining else 'tag-g'}}">{{'🌧️ Raining' if d.is_raining else '☀️ Dry'}}</span>
+    <div class="bar-t"><div id="lv-bar-rain" class="bar-f" style="width:{{d.rain|int}}%;background:#38bdf8"></div></div>
   </div>
-  <div class="card {{'warn' if d.vpd > 1.6 or d.vpd < 0.3 else ''}}">
+  <div id="lv-card-vpd" class="card {{'warn' if d.vpd > 1.6 or d.vpd < 0.3 else ''}}">
     <div class="card-icon">💨</div><div class="card-label">VPD</div>
-    <div class="card-val t">{{d.vpd}}<span style="font-size:.9rem"> kPa</span></div>
-    <div class="card-sub">Dew Point: {{d.dew_point}}°C<br>Ideal: 0.4–1.2 kPa</div>
-    {% if d.vpd < 0.3 %}<span class="card-tag tag-b">💦 Saturated</span>
-    {% elif d.vpd < 0.8 %}<span class="card-tag tag-g">🌱 Seedling Zone</span>
-    {% elif d.vpd < 1.2 %}<span class="card-tag tag-g">✓ Veg Optimal</span>
-    {% elif d.vpd < 1.6 %}<span class="card-tag tag-a">🌸 Flower Zone</span>
-    {% else %}<span class="card-tag tag-r">⚠ High Stress</span>{% endif %}
-    <div class="bar-t"><div class="bar-f" style="width:{{(d.vpd/3*100)|int}}%;background:var(--teal)"></div></div>
+    <div class="card-val t"><span id="lv-card-vpd-val">{{d.vpd}}</span><span style="font-size:.9rem"> kPa</span></div>
+    <div class="card-sub">Dew Point: <span id="lv-dew">{{d.dew_point}}</span>°C<br>Ideal: 0.4–1.2 kPa</div>
+    <span id="lv-card-vpd-tag" class="card-tag {% if d.vpd < 0.3 %}tag-b{% elif d.vpd < 0.8 %}tag-g{% elif d.vpd < 1.2 %}tag-g{% elif d.vpd < 1.6 %}tag-a{% else %}tag-r{% endif %}">{% if d.vpd < 0.3 %}💦 Saturated{% elif d.vpd < 0.8 %}🌱 Seedling Zone{% elif d.vpd < 1.2 %}✓ Veg Optimal{% elif d.vpd < 1.6 %}🌸 Flower Zone{% else %}⚠ High Stress{% endif %}</span>
+    <div class="bar-t"><div id="lv-bar-vpd" class="bar-f" style="width:{{(d.vpd/3*100)|int}}%;background:var(--teal)"></div></div>
   </div>
-  <div class="card {{'active' if c.motor_pos == 'CLOSED' else ''}}">
+  <div id="lv-card-curtain" class="card {{'active' if c.motor_pos == 'CLOSED' else ''}}">
     <div class="card-icon">🪟</div><div class="card-label">Curtain / Cover</div>
-    <div class="card-val {{'p' if c.motor_pos == 'CLOSED' else 'g'}}">{{c.motor_pos}}</div>
-    <div class="card-sub">Cycles: {{d.motor_count}} | Travel: {{c.motor_duration}}s<br>{{'⚙️ Running...' if c.is_motor_running else 'Idle'}}</div>
+    <div id="lv-card-curtain-val" class="card-val {{'p' if c.motor_pos == 'CLOSED' else 'g'}}">{{c.motor_pos}}</div>
+    <div class="card-sub">Cycles: <span id="lv-motor-count">{{d.motor_count}}</span> | Travel: {{c.motor_duration}}s<br><span id="lv-motor-status">{{'⚙️ Running...' if c.is_motor_running else 'Idle'}}</span></div>
     <div class="curtain-vis" id="curtainVis"></div>
   </div>
-  <div class="card {{'party-card' if c.party_mode else ('bad' if c.pump == 'ON' else '')}}">
-    <div class="card-icon">{{'🎉' if c.party_mode else '🚿'}}</div><div class="card-label">{{'PARTY' if c.party_mode else 'Irrigation'}}</div>
-    <div class="card-val {{'p' if c.party_mode else ('r' if c.pump == 'ON' else 'g')}}">{{c.pump}}{{'🔒' if c.pump_manual_on else ''}}</div>
-    <div class="card-sub">Last: {{c.last_watered}} | Count: {{d.water_count}}<br>Cooldown: {{cooldown_remain}}s</div>
-    {% if c.party_mode %}<span class="card-tag tag-p">🎉 Party Cycles: {{d.party_cycles}}</span>
-    {% elif c.pump_manual_on %}<span class="card-tag tag-r">🔒 Manual ON</span>
-    {% else %}<span class="card-tag tag-g">Ready</span>{% endif %}
-    <div class="bar-t"><div class="bar-f" style="width:{{'100' if c.pump == 'ON' else '0'}}%;background:#f87171;transition:width .3s"></div></div>
+  <div id="lv-card-pump" class="card {{'party-card' if c.party_mode else ('bad' if c.pump == 'ON' else '')}}">
+    <div class="card-icon" id="lv-pump-icon">{{'🎉' if c.party_mode else '🚿'}}</div><div class="card-label" id="lv-pump-label">{{'PARTY' if c.party_mode else 'Irrigation'}}</div>
+    <div id="lv-card-pump-val" class="card-val {{'p' if c.party_mode else ('r' if c.pump == 'ON' else 'g')}}"><span id="lv-pump-state">{{c.pump}}</span><span id="lv-pump-lock">{{'🔒' if c.pump_manual_on else ''}}</span></div>
+    <div class="card-sub">Last: <span id="lv-last-watered">{{c.last_watered}}</span> | Count: <span id="lv-water-count">{{d.water_count}}</span><br>Cooldown: <span id="lv-cooldown">{{cooldown_remain}}</span>s</div>
+    <span id="lv-card-pump-tag" class="card-tag {% if c.party_mode %}tag-p{% elif c.pump_manual_on %}tag-r{% else %}tag-g{% endif %}">{% if c.party_mode %}🎉 Party Cycles: {{d.party_cycles}}{% elif c.pump_manual_on %}🔒 Manual ON{% else %}Ready{% endif %}</span>
+    <div class="bar-t"><div id="lv-bar-pump" class="bar-f" style="width:{{'100' if c.pump == 'ON' else '0'}}%;background:#f87171;transition:width .3s"></div></div>
   </div>
   <div class="card">
     <div class="card-icon">🤖</div><div class="card-label">Auto Control</div>
-    <div class="card-val {{'g' if c.auto_mode else 'a'}}" style="font-size:1.25rem">{{'AUTO' if c.auto_mode else 'MANUAL'}}</div>
-    <div class="card-sub">Dry streak: {{d.consecutive_dry}}/2<br>{{c.last_event}}</div>
-    <span class="card-tag {{'tag-g' if c.auto_mode else 'tag-a'}}">{{'🌙 Night' if night_mode else '☀️ Day'}}</span>
+    <div id="lv-card-mode-val" class="card-val {{'g' if c.auto_mode else 'a'}}" style="font-size:1.25rem">{{'AUTO' if c.auto_mode else 'MANUAL'}}</div>
+    <div class="card-sub">Dry streak: <span id="lv-dry-streak">{{d.consecutive_dry}}</span>/2<br><span id="lv-last-event">{{c.last_event}}</span></div>
+    <span id="lv-card-mode-tag" class="card-tag {{'tag-g' if c.auto_mode else 'tag-a'}}">{{'🌙 Night' if night_mode else '☀️ Day'}}</span>
   </div>
   <div class="card">
     <div class="card-icon">😊</div><div class="card-label">Comfort Index</div>
-    <div class="card-val g" style="font-size:1.15rem">{{d.comfort}}</div>
-    <div class="card-sub">{{d.co2_est}}<br>AbsHum: {{d.abs_hum}} g/m³</div>
-    <span class="card-tag tag-t">ET: {{d.evap_rate}} mm/h</span>
+    <div id="lv-card-comfort-val" class="card-val g" style="font-size:1.15rem">{{d.comfort}}</div>
+    <div class="card-sub"><span id="lv-co2-est">{{d.co2_est}}</span><br>AbsHum: <span id="lv-abs-hum2">{{d.abs_hum}}</span> g/m³</div>
+    <span class="card-tag tag-t">ET: <span id="lv-evap2">{{d.evap_rate}}</span> mm/h</span>
   </div>
-  <div class="card">
+  <div id="lv-card-system" class="card">
     <div class="card-icon">🔌</div><div class="card-label">System</div>
-    <div class="card-val {{'r' if not d.last_read_ok else 'g'}}" style="font-size:1.25rem">{{'ERROR' if not d.last_read_ok else 'OK'}}</div>
-    <div class="card-sub">Errors: {{d.sensor_errors}} | DB: {{db_sc}} records<br>Alerts today: {{d.alert_count}}</div>
-    <span class="card-tag tag-g">⏱ {{uptime}}</span>
+    <div id="lv-card-system-val" class="card-val {{'r' if not d.last_read_ok else 'g'}}" style="font-size:1.25rem">{{'ERROR' if not d.last_read_ok else 'OK'}}</div>
+    <div class="card-sub">Errors: <span id="lv-errors">{{d.sensor_errors}}</span> | DB: {{db_sc}} records<br>Alerts today: <span id="lv-alert-count">{{d.alert_count}}</span></div>
+    <span class="card-tag tag-g">⏱ <span id="lv-uptime">{{uptime}}</span></span>
   </div>
 </div>
 
 <!-- STAT ROW -->
 <div class="stat-row">
-  <div class="stat-mini"><div class="sm-label">Waterings</div><div class="sm-val">{{d.water_count}} <span class="sm-unit">today</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Curtain</div><div class="sm-val">{{d.motor_count}} <span class="sm-unit">moves</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Alerts</div><div class="sm-val">{{d.alert_count}} <span class="sm-unit">today</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Party Cycles</div><div class="sm-val">{{d.party_cycles}} <span class="sm-unit">total</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Temp Range</div><div class="sm-val">{{(d.min_t|round(1)) if d.min_t is not none else '--'}}–{{(d.max_t|round(1)) if d.max_t is not none else '--'}} <span class="sm-unit">°C</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Hum Range</div><div class="sm-val">{{(d.min_h|round(1)) if d.min_h is not none else '--'}}–{{(d.max_h|round(1)) if d.max_h is not none else '--'}} <span class="sm-unit">%</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Soil Range</div><div class="sm-val">{{(d.min_soil|round(1)) if d.min_soil is not none else '--'}}–{{(d.max_soil|round(1)) if d.max_soil is not none else '--'}} <span class="sm-unit">%</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Peak Light</div><div class="sm-val">{{d.max_light|round(1)}} <span class="sm-unit">%</span></div></div>
-  <div class="stat-mini"><div class="sm-label">VPD</div><div class="sm-val">{{d.vpd}} <span class="sm-unit">kPa</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Dew Point</div><div class="sm-val">{{d.dew_point}} <span class="sm-unit">°C</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Abs Humidity</div><div class="sm-val">{{d.abs_hum}} <span class="sm-unit">g/m³</span></div></div>
-  <div class="stat-mini"><div class="sm-label">Uptime</div><div class="sm-val">{{uptime}}</div></div>
+  <div class="stat-mini"><div class="sm-label">Waterings</div><div class="sm-val"><span id="lv-stat-water">{{d.water_count}}</span> <span class="sm-unit">today</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Curtain</div><div class="sm-val"><span id="lv-stat-motor">{{d.motor_count}}</span> <span class="sm-unit">moves</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Alerts</div><div class="sm-val"><span id="lv-stat-alerts">{{d.alert_count}}</span> <span class="sm-unit">today</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Party Cycles</div><div class="sm-val"><span id="lv-stat-party">{{d.party_cycles}}</span> <span class="sm-unit">total</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Temp Range</div><div class="sm-val"><span id="lv-stat-temp-range">{{(d.min_t|round(1)) if d.min_t is not none else '--'}}–{{(d.max_t|round(1)) if d.max_t is not none else '--'}}</span> <span class="sm-unit">°C</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Hum Range</div><div class="sm-val"><span id="lv-stat-hum-range">{{(d.min_h|round(1)) if d.min_h is not none else '--'}}–{{(d.max_h|round(1)) if d.max_h is not none else '--'}}</span> <span class="sm-unit">%</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Soil Range</div><div class="sm-val"><span id="lv-stat-soil-range">{{(d.min_soil|round(1)) if d.min_soil is not none else '--'}}–{{(d.max_soil|round(1)) if d.max_soil is not none else '--'}}</span> <span class="sm-unit">%</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Peak Light</div><div class="sm-val"><span id="lv-stat-peak-light">{{d.max_light|round(1)}}</span> <span class="sm-unit">%</span></div></div>
+  <div class="stat-mini"><div class="sm-label">VPD</div><div class="sm-val"><span id="lv-stat-vpd">{{d.vpd}}</span> <span class="sm-unit">kPa</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Dew Point</div><div class="sm-val"><span id="lv-stat-dew">{{d.dew_point}}</span> <span class="sm-unit">°C</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Abs Humidity</div><div class="sm-val"><span id="lv-stat-abs-hum">{{d.abs_hum}}</span> <span class="sm-unit">g/m³</span></div></div>
+  <div class="stat-mini"><div class="sm-label">Uptime</div><div class="sm-val"><span id="lv-stat-uptime">{{uptime}}</span></div></div>
 </div>
 
 </section>
@@ -1604,6 +1598,239 @@ function showTab(id, el){
   });
 })();
 
+// ── LIVE PARTIAL UPDATE (AJAX, no full reload) ──
+// Only updates the ~40 labelled <span>/<div> elements every 3s.
+// Full page reload still happens on the normal countdown for config/logs sync.
+
+const CIRC = 2 * Math.PI * 25;  // SVG arc circumference (r=25)
+
+function _fmt1(v)   { return v != null ? (+v).toFixed(1) : '--'; }
+function _fmt3(v)   { return v != null ? (+v).toFixed(3) : '--'; }
+function _set(id, text) { const el=document.getElementById(id); if(el) el.textContent=text; }
+function _cls(id, ...classes) {
+  const el=document.getElementById(id); if(!el) return;
+  // Remove all possible state classes then add new ones
+  ['ok','warn','bad','active','party-card','g','r','a','b','p','t',
+   'tag-g','tag-r','tag-a','tag-b','tag-p','tag-t'].forEach(c=>el.classList.remove(c));
+  classes.forEach(c=>{ if(c) el.classList.add(c); });
+}
+
+async function liveUpdate() {
+  let s;
+  try {
+    const res = await fetch('/api/status');
+    if (!res.ok) return;
+    s = await res.json();
+  } catch(e) { return; }  // silent on network error
+
+  const th = s;   // alias – same object, just shorter
+
+  // ── HEALTH RING ──
+  const arc = document.getElementById('lv-health-arc');
+  if (arc) {
+    const dash = (s.health_score / 100) * CIRC;
+    arc.setAttribute('stroke-dasharray', dash.toFixed(2) + ' ' + CIRC.toFixed(2));
+    const hc = s.health_score>=65 ? '#34d399' : s.health_score>=45 ? '#fbbf24' : '#f87171';
+    arc.setAttribute('stroke', hc);
+  }
+  _set('lv-health-score', s.health_score);
+  _set('lv-health-label', s.health_label || '');
+  _set('lv-comfort',      s.comfort || '');
+
+  // ── HEALTH PILLS (value + border class) ──
+  _set('lv-temp',  _fmt1(s.temp)  + '°C');
+  _set('lv-soil',  _fmt1(s.soil)  + '%');
+  _set('lv-hum',   _fmt1(s.hum)   + '%');
+  _set('lv-light', _fmt1(s.light) + '%');
+  _set('lv-rain',  _fmt1(s.rain)  + '%');
+  _set('lv-vpd',   s.vpd          + 'kPa');
+  _set('lv-sensor-ok', s.last_read_ok ? 'OK' : 'ERR');
+  _cls('lv-pill-temp',   s.temp > th.th_temp_high || s.temp < th.th_temp_low ? 'bad' : '');
+  _cls('lv-pill-soil',   s.soil < th.th_soil_crit ? 'bad' : s.soil < th.th_soil ? 'warn' : '');
+  _cls('lv-pill-hum',    s.hum  < th.th_air   ? 'warn' : '');
+  _cls('lv-pill-light',  s.is_bright            ? 'warn' : '');
+  _cls('lv-pill-rain',   s.is_raining           ? 'warn' : '');
+  _cls('lv-pill-vpd',    s.vpd > 1.6 || s.vpd < 0.3 ? 'warn' : '');
+  _cls('lv-pill-sensor', !s.last_read_ok        ? 'bad'  : '');
+
+  // ── ENV BAR (value + ok/warn/bad class) ──
+  _set('lv-env-temp',   _fmt1(s.temp) + '°C ' + (s.temp_trend||'→'));
+  _set('lv-env-light',  _fmt1(s.light) + '%');
+  _set('lv-env-rain',   s.is_raining ? '🌧️ RAIN' : '☀️ DRY');
+  _set('lv-env-mode',   s.auto_mode  ? 'AUTO' : 'MANUAL');
+  _set('lv-env-pump',   s.pump + (s.pump_manual_on ? ' 🔒' : ''));
+  _set('lv-env-period', s.night_mode ? 'NIGHT 🌙' : 'DAY ☀️');
+  _set('lv-env-vpd',    s.vpd + 'kPa');
+  _set('lv-env-dew',    s.dew_point + '°C');
+  _cls('lv-envpill-temp',   s.temp > th.th_temp_high || s.temp < th.th_temp_low ? 'env-pill bad' : 'env-pill ok');
+  _cls('lv-envpill-light',  s.is_bright   ? 'env-pill warn' : 'env-pill ok');
+  _cls('lv-envpill-rain',   s.is_raining  ? 'env-pill warn' : 'env-pill ok');
+  _cls('lv-envpill-mode',   s.auto_mode   ? 'env-pill ok'   : 'env-pill warn');
+  _cls('lv-envpill-pump',   s.pump==='ON' ? 'env-pill bad'  : s.pump==='PARTY' ? 'env-pill warn' : 'env-pill ok');
+  _cls('lv-envpill-period', s.night_mode  ? 'env-pill warn' : 'env-pill ok');
+  _cls('lv-envpill-vpd',    s.vpd > 1.6 || s.vpd < 0.4 ? 'env-pill warn' : 'env-pill ok');
+
+  // ── METRIC CARD: TEMPERATURE ──
+  _set('lv-temp-trend',  s.temp_trend || '→');
+  _set('lv-heat-index',  _fmt1(s.heat_index));
+  const tMin = s.min_t != null ? (+s.min_t).toFixed(1) : '--';
+  const tMax = s.max_t != null ? (+s.max_t).toFixed(1) : '--';
+  _set('lv-temp-range',  tMin + ' – ' + tMax);
+  const tempBad = s.temp > th.th_temp_high || s.temp < th.th_temp_low;
+  _cls('lv-card-temp',     tempBad ? 'card bad' : 'card');
+  _cls('lv-card-temp-val', 'card-val ' + (tempBad ? 'r' : 'g'));
+  if (document.getElementById('lv-card-temp-val'))
+    document.getElementById('lv-card-temp-val').firstChild.textContent = _fmt1(s.temp) + '°';
+  _cls('lv-card-temp-tag', 'card-tag ' + (tempBad ? 'tag-r' : 'tag-g'));
+  _set('lv-card-temp-tag', tempBad ? (s.temp > th.th_temp_high ? '⚠ Too Hot' : '⚠ Too Cold') : '✓ Normal');
+  const tempPct = Math.min(100, Math.max(0, ((s.temp+10)/55*100)|0));
+  const barTemp = document.getElementById('lv-bar-temp');
+  if (barTemp) barTemp.style.width = tempPct + '%';
+
+  // ── METRIC CARD: HUMIDITY ──
+  _set('lv-hum-trend',  s.hum_trend || '→');
+  _set('lv-abs-hum',    s.abs_hum);
+  _set('lv-abs-hum2',   s.abs_hum);
+  const hMin = s.min_h != null ? (+s.min_h).toFixed(1) : '--';
+  const hMax = s.max_h != null ? (+s.max_h).toFixed(1) : '--';
+  _set('lv-hum-range',  hMin + '–' + hMax);
+  _cls('lv-card-hum-val', 'card-val b');
+  if (document.getElementById('lv-card-hum-val'))
+    document.getElementById('lv-card-hum-val').firstChild.textContent = _fmt1(s.hum) + '%';
+  const humTag = s.hum > th.th_hum_high ? '⚠ Mold Risk' : s.hum < th.th_air ? '⚠ Low' : '✓ Good';
+  const humTagCls = s.hum > th.th_hum_high || s.hum < th.th_air ? 'tag-a' : 'tag-g';
+  _cls('lv-card-hum-tag', 'card-tag ' + humTagCls);
+  _set('lv-card-hum-tag', humTag);
+  const barHum = document.getElementById('lv-bar-hum');
+  if (barHum) barHum.style.width = Math.min(100, s.hum|0) + '%';
+
+  // ── METRIC CARD: SOIL ──
+  _set('lv-soil-trend', s.soil_trend || '→');
+  _set('lv-soil-ec',    s.soil_ec);
+  const sMin = s.min_soil != null ? (+s.min_soil).toFixed(1) : '--';
+  const sMax = s.max_soil != null ? (+s.max_soil).toFixed(1) : '--';
+  _set('lv-soil-range', sMin + '–' + sMax);
+  const soilBad  = s.soil < th.th_soil_crit;
+  const soilWarn = !soilBad && s.soil < th.th_soil;
+  _cls('lv-card-soil',     'card ' + (soilBad ? 'bad' : soilWarn ? 'warn' : ''));
+  _cls('lv-card-soil-val', 'card-val ' + (soilBad ? 'r' : soilWarn ? 'a' : 'g'));
+  if (document.getElementById('lv-card-soil-val'))
+    document.getElementById('lv-card-soil-val').firstChild.textContent = _fmt1(s.soil) + '%';
+  const soilTagTxt = soilBad ? '‼ Critical Dry' : soilWarn ? '⚠ Dry' : '✓ Moist';
+  const soilTagCls = soilBad ? 'tag-r' : soilWarn ? 'tag-a' : 'tag-g';
+  _cls('lv-card-soil-tag', 'card-tag ' + soilTagCls);
+  _set('lv-card-soil-tag', soilTagTxt);
+  const barSoil = document.getElementById('lv-bar-soil');
+  if (barSoil) barSoil.style.width = Math.min(100, s.soil|0) + '%';
+
+  // ── METRIC CARD: LIGHT ──
+  _set('lv-peak-light', _fmt1(s.max_light));
+  _set('lv-evap',  s.evap_rate);
+  _set('lv-evap2', s.evap_rate);
+  _cls('lv-card-light',     'card ' + (s.is_bright ? 'warn' : ''));
+  _cls('lv-card-light-val', 'card-val ' + (s.is_bright ? 'a' : 'g'));
+  if (document.getElementById('lv-card-light-val'))
+    document.getElementById('lv-card-light-val').textContent = _fmt1(s.light) + '%';
+  const lightTxt = s.is_bright ? '☀️ Bright' : s.light > 40 ? 'Moderate' : 'Low Light';
+  _cls('lv-card-light-tag', 'card-tag ' + (s.is_bright ? 'tag-a' : 'tag-g'));
+  _set('lv-card-light-tag', lightTxt);
+  const barLight = document.getElementById('lv-bar-light');
+  if (barLight) barLight.style.width = Math.min(100, s.light|0) + '%';
+
+  // ── METRIC CARD: RAIN ──
+  _cls('lv-card-rain',     'card ' + (s.is_raining ? 'warn' : ''));
+  _cls('lv-card-rain-val', 'card-val ' + (s.is_raining ? 'b' : 'g'));
+  if (document.getElementById('lv-card-rain-val'))
+    document.getElementById('lv-card-rain-val').textContent = _fmt1(s.rain) + '%';
+  _cls('lv-card-rain-tag', 'card-tag ' + (s.is_raining ? 'tag-a' : 'tag-g'));
+  _set('lv-card-rain-tag', s.is_raining ? '🌧️ Raining' : '☀️ Dry');
+  const barRain = document.getElementById('lv-bar-rain');
+  if (barRain) barRain.style.width = Math.min(100, s.rain|0) + '%';
+
+  // ── METRIC CARD: VPD ──
+  _set('lv-card-vpd-val', s.vpd);
+  _set('lv-dew', s.dew_point);
+  _set('lv-stat-dew', s.dew_point);
+  _cls('lv-card-vpd', 'card ' + (s.vpd > 1.6 || s.vpd < 0.3 ? 'warn' : ''));
+  const vpdTxt = s.vpd < 0.3 ? '💦 Saturated' : s.vpd < 0.8 ? '🌱 Seedling Zone'
+               : s.vpd < 1.2 ? '✓ Veg Optimal' : s.vpd < 1.6 ? '🌸 Flower Zone' : '⚠ High Stress';
+  const vpdCls = s.vpd < 0.3 ? 'tag-b' : s.vpd < 1.2 ? 'tag-g' : s.vpd < 1.6 ? 'tag-a' : 'tag-r';
+  _cls('lv-card-vpd-tag', 'card-tag ' + vpdCls);
+  _set('lv-card-vpd-tag', vpdTxt);
+  const barVpd = document.getElementById('lv-bar-vpd');
+  if (barVpd) barVpd.style.width = Math.min(100, (s.vpd/3*100)|0) + '%';
+
+  // ── METRIC CARD: CURTAIN ──
+  _cls('lv-card-curtain',     'card ' + (s.motor_pos==='CLOSED' ? 'active' : ''));
+  _cls('lv-card-curtain-val', 'card-val ' + (s.motor_pos==='CLOSED' ? 'p' : 'g'));
+  _set('lv-card-curtain-val', s.motor_pos);
+  _set('lv-motor-count',  s.motor_count);
+  _set('lv-motor-status', s.is_motor_running ? '⚙️ Running...' : 'Idle');
+
+  // ── METRIC CARD: PUMP / PARTY ──
+  const pumpBad = s.pump === 'ON';
+  const isParty = s.party_mode;
+  _cls('lv-card-pump', 'card ' + (isParty ? 'party-card' : pumpBad ? 'bad' : ''));
+  _set('lv-pump-icon',  isParty ? '🎉' : '🚿');
+  _set('lv-pump-label', isParty ? 'PARTY' : 'Irrigation');
+  _cls('lv-card-pump-val', 'card-val ' + (isParty ? 'p' : pumpBad ? 'r' : 'g'));
+  _set('lv-pump-state', s.pump);
+  _set('lv-pump-lock',  s.pump_manual_on ? '🔒' : '');
+  _set('lv-last-watered', s.last_watered || 'Never');
+  _set('lv-water-count',  s.water_count);
+  _set('lv-cooldown',     s.cooldown_remain != null ? s.cooldown_remain : '—');
+  const pumpTagTxt = isParty ? '🎉 Party Cycles: '+s.party_cycles : s.pump_manual_on ? '🔒 Manual ON' : 'Ready';
+  const pumpTagCls = isParty ? 'tag-p' : s.pump_manual_on ? 'tag-r' : 'tag-g';
+  _cls('lv-card-pump-tag', 'card-tag ' + pumpTagCls);
+  _set('lv-card-pump-tag', pumpTagTxt);
+  const barPump = document.getElementById('lv-bar-pump');
+  if (barPump) barPump.style.width = (pumpBad ? '100' : '0') + '%';
+
+  // ── METRIC CARD: AUTO CONTROL ──
+  _cls('lv-card-mode-val', 'card-val ' + (s.auto_mode ? 'g' : 'a'));
+  _set('lv-card-mode-val', s.auto_mode ? 'AUTO' : 'MANUAL');
+  _set('lv-dry-streak', s.consecutive_dry);
+  _set('lv-last-event', s.last_event || '');
+  _cls('lv-card-mode-tag', 'card-tag ' + (s.auto_mode ? 'tag-g' : 'tag-a'));
+  _set('lv-card-mode-tag', s.night_mode ? '🌙 Night' : '☀️ Day');
+
+  // ── METRIC CARD: COMFORT ──
+  _set('lv-card-comfort-val', s.comfort || '');
+  _set('lv-co2-est', s.co2_est || '');
+
+  // ── METRIC CARD: SYSTEM ──
+  _cls('lv-card-system-val', 'card-val ' + (!s.last_read_ok ? 'r' : 'g'));
+  _set('lv-card-system-val', !s.last_read_ok ? 'ERROR' : 'OK');
+  _set('lv-errors',      s.sensor_errors);
+  _set('lv-alert-count', s.alert_count);
+  _set('lv-uptime',      s.uptime || '');
+
+  // ── STAT ROW ──
+  _set('lv-stat-water',      s.water_count);
+  _set('lv-stat-motor',      s.motor_count);
+  _set('lv-stat-alerts',     s.alert_count);
+  _set('lv-stat-party',      s.party_cycles);
+  _set('lv-stat-temp-range', tMin + '–' + tMax);
+  _set('lv-stat-hum-range',  hMin + '–' + hMax);
+  _set('lv-stat-soil-range', sMin + '–' + sMax);
+  _set('lv-stat-peak-light', _fmt1(s.max_light));
+  _set('lv-stat-vpd',        s.vpd);
+  _set('lv-stat-abs-hum',    s.abs_hum);
+  _set('lv-stat-uptime',     s.uptime || '');
+
+  // ── PARTY LAMPS ──
+  const lampA = document.getElementById('lampA');
+  if (lampA) { lampA.className = 'relay-lamp ' + (s.party_relay_a_state ? 'a-on' : 'a-off'); }
+  const lampB = document.getElementById('lampB');
+  if (lampB) { lampB.className = 'relay-lamp ' + (s.party_relay_b_state ? 'b-on' : 'b-off'); }
+}
+
+// Run once immediately, then every 3 seconds
+liveUpdate();
+setInterval(liveUpdate, 3000);
+
+
+
 // ── CHARTS ──
 let myChart=null, vpdChartObj=null;
 
@@ -1750,10 +1977,29 @@ def api_history(): return jsonify(get_history(int(request.args.get('hours',24)))
 
 @app.route('/api/status')
 def api_status():
-    return jsonify({**data,**{k:v for k,v in cfg.items() if k not in ('boot_time','last_watered_ts')},
-        "health_score":health_score(),"uptime":uptime_str(),
-        "night_mode":is_night(),"cooldown_remain":cooldown_remain(),
-        "virtual_mode":VIRTUAL})
+    hs = health_score()
+    return jsonify({
+        **{k: v for k, v in data.items() if not k.startswith('_')},
+        **{k: v for k, v in cfg.items() if k not in ('boot_time', 'last_watered_ts')},
+        # computed
+        "health_score":    hs,
+        "health_label":    health_label(hs),
+        "uptime":          uptime_str(),
+        "night_mode":      is_night(),
+        "cooldown_remain": cooldown_remain(),
+        "virtual_mode":    VIRTUAL,
+        "virtual_toggle":  cfg.get("virtual_toggle", False),
+        "is_virtual":      is_virtual(),
+        # thresholds exposed explicitly so JS alert-class logic works
+        "th_temp_high":    cfg["th_temp_high"],
+        "th_temp_low":     cfg["th_temp_low"],
+        "th_soil":         cfg["th_soil"],
+        "th_soil_crit":    cfg["th_soil_crit"],
+        "th_air":          cfg["th_air"],
+        "th_hum_high":     cfg["th_hum_high"],
+        "th_light":        cfg["th_light"],
+        "th_rain":         cfg["th_rain"],
+    })
 
 @app.route('/api/events')
 def api_events():
