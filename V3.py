@@ -611,6 +611,10 @@ def cooldown_remain():
     if cfg["pump_manual_on"] or cfg["party_mode"]: return 0
     return max(0, int(cfg["water_cooldown"] - (time.time() - cfg["last_watered_ts"])))
 
+def is_virtual():
+    """Return True if currently running in virtual (simulated) mode."""
+    return VIRTUAL or cfg.get("virtual_toggle", False)
+
 # ================== 8. CORE MONITOR ==================
 
 def core_monitor():
@@ -747,10 +751,27 @@ HTML = r"""<!DOCTYPE html>
   --bg:#04080a;--panel:#0b1820;--border:rgba(52,211,153,0.10);
   --accent:#34d399;--blue:#38bdf8;--amber:#fbbf24;--red:#f87171;
   --purple:#a78bfa;--pink:#f472b6;--teal:#2dd4bf;
-  --text:#d1fae5;--muted:#3d6457;--font:'Space Grotesk',sans-serif;
+  --text:#e8faf3;--muted:#6aab93;--font:'Space Grotesk',sans-serif;
   --mono:'JetBrains Mono',monospace;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── LIGHT MODE ── */
+:root.light{
+  --bg:#eef7f3;--panel:#ffffff;--border:rgba(5,150,105,0.18);
+  --accent:#059669;--blue:#0284c7;--amber:#d97706;--red:#dc2626;
+  --purple:#7c3aed;--pink:#db2777;--teal:#0d9488;
+  --text:#0a2018;--muted:#3d7a62;
+}
+:root.light body::before{
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 15%,rgba(5,150,105,.05) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 85%,rgba(2,132,199,.04) 0%,transparent 55%),
+    repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(5,150,105,.03) 39px,rgba(5,150,105,.03) 40px),
+    repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(5,150,105,.03) 39px,rgba(5,150,105,.03) 40px)}
+:root.light .bar-t{background:rgba(0,0,0,.08)}
+:root.light input[type=number],:root.light input[type=text],:root.light select{background:rgba(0,0,0,.04);color:var(--text)}
+:root.light select option{background:#fff;color:#0a2018}
+:root.light .wlog-table td,:root.light .sched-table td,:root.light .cmd-table td{border-bottom-color:rgba(0,0,0,.06)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;transition:background-color .22s,border-color .22s,color .22s}
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;z-index:0;
@@ -918,6 +939,18 @@ select option{background:#101f24}
 /* ── ALERT STRIP ── */
 .alert-strip{display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-family:var(--mono);font-size:.72rem;color:var(--red);align-items:center;gap:8px}
 .alert-strip.show{display:flex}
+/* ── THEME TOGGLE ── */
+.theme-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:rgba(52,211,153,.07);cursor:pointer;font-size:.95rem;flex-shrink:0;transition:all .2s;color:var(--text)}
+.theme-btn:hover{background:rgba(52,211,153,.18);border-color:var(--accent)}
+/* ── VIRTUAL BADGE ── */
+.virtual-badge{display:none;align-items:center;gap:7px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:20px;padding:7px 14px;font-family:var(--mono);font-size:.7rem;color:var(--amber)}
+.virtual-badge.show{display:flex}
+/* ── SIM SLIDERS ── */
+.sim-panel{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25);border-radius:14px;padding:16px 18px;margin-top:12px}
+.sim-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.sim-row label{min-width:90px}
+.sim-row span{min-width:38px;color:var(--accent);font-weight:600}
+.sim-row input[type=range]{flex:1;accent-color:var(--amber)}
 </style>
 </head>
 <body>
@@ -939,7 +972,9 @@ select option{background:#101f24}
   </div>
   <div class="header-right">
     <div class="party-badge {{'on' if c.party_mode else ''}}">🎉 PARTY MODE</div>
-    <div class="live-badge" id="refreshBadge" onclick="toggleRefresh()" title="Click to pause/resume auto-refresh" style="cursor:pointer">
+    <div class="virtual-badge {{'show' if virtual_mode else ''}}">🟡 VIRTUAL</div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="切换 Light/Dark 模式">🌙</button>
+    <div class="live-badge" id="refreshBadge" onclick="toggleRefresh()" title="点击暂停/恢复" style="cursor:pointer">
       <div class="pulse" id="refreshPulse"></div>
       <span id="refreshLabel">LIVE</span>
       <span id="refreshCountdown" style="margin-left:4px;color:var(--accent)">5s</span>
@@ -1247,6 +1282,18 @@ select option{background:#101f24}
       <a href="/reset_stats" class="btn btn-ghost">↺ Reset Daily Stats</a>
       <a href="/reset_extremes" class="btn btn-ghost">↺ Reset Min/Max Records</a>
       <a href="/api/status" class="btn btn-ghost" target="_blank">📡 API Status JSON</a>
+      {% if virtual_mode %}
+      <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px">
+        <div style="font-family:var(--mono);font-size:.62rem;color:var(--amber);letter-spacing:1px;margin-bottom:8px">🟡 VIRTUAL SENSOR SIMULATOR</div>
+        <form id="simForm" action="/sim_set" method="post">
+          <div class="sim-row"><label>🌡️ Temp</label><input type="range" name="temp" min="-5" max="50" step="0.5" value="{{c.get('_sim_temp',25)}}" oninput="this.nextElementSibling.textContent=this.value+'°C';autoSubmitSim()"><span>{{c.get('_sim_temp',25)}}°C</span></div>
+          <div class="sim-row"><label>💧 Humidity</label><input type="range" name="hum" min="0" max="100" step="1" value="{{c.get('_sim_hum',60)}}" oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"><span>{{c.get('_sim_hum',60)}}%</span></div>
+          <div class="sim-row"><label>🪴 Soil</label><input type="range" name="soil" min="0" max="100" step="1" value="{{c.get('_sim_soil',55)}}" oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"><span>{{c.get('_sim_soil',55)}}%</span></div>
+          <div class="sim-row"><label>☀️ Light</label><input type="range" name="light" min="0" max="100" step="1" value="{{c.get('_sim_light',50)}}" oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"><span>{{c.get('_sim_light',50)}}%</span></div>
+          <div class="sim-row"><label>🌧️ Rain</label><input type="range" name="rain" min="0" max="100" step="1" value="{{c.get('_sim_rain',5)}}" oninput="this.nextElementSibling.textContent=this.value+'%';autoSubmitSim()"><span>{{c.get('_sim_rain',5)}}%</span></div>
+        </form>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>
@@ -1570,6 +1617,36 @@ select option{background:#101f24}
 </div>
 
 <script>
+// ── THEME (Light / Dark) ──
+(function(){
+  const saved = localStorage.getItem('gh_theme');
+  if(saved === 'light') _applyTheme('light');
+})();
+function _applyTheme(mode){
+  const light = mode === 'light';
+  document.documentElement.classList.toggle('light', light);
+  const btn = document.getElementById('themeBtn');
+  if(btn) btn.textContent = light ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const isLight = document.documentElement.classList.contains('light');
+  const next = isLight ? 'dark' : 'light';
+  _applyTheme(next);
+  localStorage.setItem('gh_theme', next);
+}
+
+// ── VIRTUAL SIM SLIDER AUTO-SUBMIT (debounced 400ms) ──
+let _simTimer = null;
+function autoSubmitSim(){
+  clearTimeout(_simTimer);
+  _simTimer = setTimeout(()=>{
+    const form = document.getElementById('simForm');
+    if(!form) return;
+    fetch('/sim_set', {method:'POST', body: new FormData(form)})
+      .catch(e => console.warn('sim_set failed:', e));
+  }, 400);
+}
+
 // ── TAB NAVIGATION ──
 function showTab(id, el){
   document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
@@ -2145,6 +2222,24 @@ def update():
             try: cfg[k]=cast(f[fk])
             except: pass
     log_event("system","Settings updated via web"); return redirect(url_for('index'))
+
+@app.route('/sim_set', methods=['POST'])
+def sim_set():
+    """Update virtual sensor simulator values from web sliders."""
+    if not is_virtual():
+        return jsonify({"ok": False, "error": "Not in virtual mode"}), 400
+    f = request.form
+    try: _vsim["temp"]  = float(f.get("temp",  _vsim["temp"]));  cfg["_sim_temp"]  = _vsim["temp"]
+    except: pass
+    try: _vsim["hum"]   = float(f.get("hum",   _vsim["hum"]));   cfg["_sim_hum"]   = _vsim["hum"]
+    except: pass
+    try: _vsim["soil"]  = float(f.get("soil",  _vsim["soil"]));  cfg["_sim_soil"]  = _vsim["soil"]
+    except: pass
+    try: _vsim["light"] = float(f.get("light", _vsim["light"])); cfg["_sim_light"] = _vsim["light"]
+    except: pass
+    try: _vsim["rain"]  = float(f.get("rain",  _vsim["rain"]));  cfg["_sim_rain"]  = _vsim["rain"]
+    except: pass
+    return jsonify({"ok": True, "vsim": dict(_vsim)})
 
 # ================== 11. TELEGRAM BOT ==================
 
